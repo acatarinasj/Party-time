@@ -278,6 +278,7 @@
       <h2>Itens</h2>
       <span class="pill plain" id="food-count"></span>
     </div>
+    <div class="progress" aria-hidden="true"><div id="food-bar"></div></div>
     <div class="filters" id="food-filter"></div>
     <div id="food-items"></div>
   </section>
@@ -493,7 +494,8 @@ function renderFood(){
   foodFilter = renderWhoChips($("#food-filter"), data.food, foodFilter);
   const list = data.food.filter(f=>matchWho(f, foodFilter));
   const ready = data.food.filter(f=>f.done).length;
-  $("#food-count").textContent = data.food.length ? `${ready} de ${data.food.length} prontos` : "";
+  $("#food-count").textContent = `${ready} de ${data.food.length} prontos`;
+  $("#food-bar").style.width = data.food.length ? (ready/data.food.length*100)+"%" : "0";
   // por tratar primeiro, prontos no fim
   const sorted = [...list.filter(f=>!f.done), ...list.filter(f=>f.done)];
   $("#food-items").innerHTML = sorted.length
