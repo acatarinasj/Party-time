@@ -51,7 +51,8 @@
   .top-actions{position:absolute;top:22px;right:0}
 
   /* ---------- separadores (controlo segmentado) ---------- */
-  nav.tabs{display:flex;gap:4px;margin:18px auto 24px;padding:4px;background:var(--soft);border-radius:999px;max-width:420px}
+  nav.tabs{display:flex;gap:4px;margin:18px auto 24px;padding:4px;background:var(--soft);border-radius:999px;max-width:520px}
+  @media (max-width:480px){nav.tabs .tab{font-size:14px;padding:9px 4px}}
   .tab{
     flex:1;font-size:16px;cursor:pointer;color:var(--muted);
     background:transparent;border:0;border-radius:999px;padding:9px 12px;transition:background .2s,color .2s;
@@ -94,6 +95,16 @@
   }
   input:focus{background:var(--paper);border-color:var(--mint);outline:none}
   input::placeholder{color:#B5BCC7}
+  select{
+    width:100%;font-family:inherit;font-weight:600;font-size:16px;color:var(--ink);
+    background:var(--soft) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%238A93A3'><path d='M5 8l5 5 5-5z'/></svg>") no-repeat right 10px center/18px;
+    border:1px solid transparent;border-radius:12px;padding:11px 36px 11px 13px;appearance:none;-webkit-appearance:none
+  }
+  select:focus{background-color:var(--paper);border-color:var(--mint);outline:none}
+  .grid.two{grid-template-columns:1fr 1fr}
+  .grid .full{grid-column:1/-1}
+  @media (max-width:560px){.grid.two{grid-template-columns:1fr}}
+  input.invalid{border-color:var(--pink);background:#FFF5F6}
   .login-error{display:none;background:#FFE9EC;color:#B4485A;border-radius:12px;padding:9px 12px;font-size:14px;text-align:center}
 
   /* ---------- resumo ---------- */
@@ -173,6 +184,27 @@
   .progress > div{height:100%;background:linear-gradient(90deg,var(--pink),var(--yellow),var(--green));width:0;transition:width .3s}
   #todo-count,#food-count{background:transparent;padding:0;color:var(--muted)}
 
+  /* ---------- prendas ---------- */
+  .totals-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .totals-head .amount{font-family:"Fredoka",sans-serif;font-weight:600;font-size:26px}
+  .totals .lbl{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+  .totals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+  .buyer-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:14px;font-weight:700}
+  .buyer-row span:last-child{font-variant-numeric:tabular-nums}
+  .cat-name{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#B5BCC7;margin:6px 0 1px}
+  .cat-group:first-child .cat-name{margin-top:0}
+  .totals-empty{margin:0;font-size:13px;color:#B5BCC7}
+  .gift-for{margin:-2px 0 10px;font-size:14px;color:var(--muted)}
+  .settle-btn{
+    width:100%;margin-top:12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+    background:var(--soft);color:var(--muted);border:0;border-radius:999px;padding:9px 8px;transition:background .2s,color .2s
+  }
+  .settle-btn:hover{color:var(--ink)}
+  .item.settled .settle-btn{background:#DDF3EE;color:#2F7A6A}
+  .item.settled h3,.item.settled .gift-for,.item.settled .meta{opacity:.5}
+  .item.settled h3{text-decoration:line-through}
+
   .empty-note{border:1.5px dashed var(--line);border-radius:var(--radius);padding:26px 18px;text-align:center;color:var(--muted);font-size:14px}
   .empty-note strong{display:block;font-family:"Fredoka",sans-serif;font-weight:600;font-size:17px;color:var(--ink);margin-bottom:4px}
   .hidden{display:none !important}
@@ -219,6 +251,7 @@
     <button class="tab" role="tab" id="tab-guests" aria-selected="true" data-view="guests">Convidados</button>
     <button class="tab" role="tab" id="tab-food" aria-selected="false" data-view="food">Comida</button>
     <button class="tab" role="tab" id="tab-todo" aria-selected="false" data-view="todo">To do</button>
+    <button class="tab" role="tab" id="tab-gifts" aria-selected="false" data-view="gifts">Prendas</button>
   </nav>
 
   <!-- ======== CONVIDADOS ======== -->
@@ -309,6 +342,77 @@
     <div id="todo-items"></div>
   </section>
 
+  <!-- ======== PRENDAS (igual à Kitty Quest) ======== -->
+  <section id="view-gifts" role="tabpanel" aria-labelledby="tab-gifts" class="hidden">
+
+    <!-- ecrã 1: listagem -->
+    <div id="gifts-list">
+      <div class="section-head">
+        <h2>Prendas</h2>
+        <button class="btn-cta" id="go-add-gift">Nova prenda</button>
+      </div>
+      <div class="card totals">
+        <div class="totals-head">
+          <span class="lbl" style="margin:0">Total por saldar</span>
+          <span class="amount" id="gifts-total"></span>
+        </div>
+        <div class="totals-grid">
+          <div>
+            <span class="lbl">Quem compra</span>
+            <div id="gifts-by-buyer"></div>
+          </div>
+          <div>
+            <span class="lbl">Quem dá</span>
+            <div id="gifts-by-giver"></div>
+          </div>
+          <div>
+            <span class="lbl">Para quem</span>
+            <div id="gifts-by-recipient"></div>
+          </div>
+        </div>
+      </div>
+      <div id="gifts-items"></div>
+    </div>
+
+    <!-- ecrã 2: nova prenda -->
+    <div id="gift-add" class="hidden">
+      <button class="back-btn" id="gift-add-back" style="margin:0 0 10px -10px">‹ Voltar</button>
+      <div class="card">
+        <h2>Nova prenda</h2>
+        <form class="grid two" id="gift-form" autocomplete="off">
+          <div class="full">
+            <label for="g-item">Item</label>
+            <input id="g-item" placeholder="Bicicleta">
+          </div>
+          <div>
+            <label for="g-recipient">Para quem</label>
+            <input id="g-recipient" placeholder="Nome" list="people">
+          </div>
+          <div>
+            <label for="g-cat">Categoria</label>
+            <select id="g-cat"></select>
+          </div>
+          <div>
+            <label for="g-buyer">Quem compra</label>
+            <input id="g-buyer" placeholder="Nome" list="people">
+          </div>
+          <div>
+            <label for="g-giver">Quem dá</label>
+            <input id="g-giver" placeholder="Nome" list="people">
+          </div>
+          <div>
+            <label for="g-value">Valor (€)</label>
+            <input id="g-value" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="full" style="text-align:right">
+            <button class="btn-cta" id="g-save" type="submit">Guardar prenda</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </section>
+
   <footer>Convidar · Comer · Celebrar</footer>
   </div><!-- /app-content -->
 </div>
@@ -331,8 +435,8 @@ const SUPABASE_KEY = "sb_publishable_USK5NaKdSEoFQnROFr3fXg_gYb00Tsg";
 const supa = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 /* ---------------- dados (guardados no Supabase, não no dispositivo) ---------------- */
-const TABLES = { guests:"pt_guests", food:"pt_food", todos:"pt_todos" };
-const emptyData = () => ({ guests:[], food:[], todos:[] });
+const TABLES = { guests:"pt_guests", food:"pt_food", todos:"pt_todos", gifts:"pt_gifts" };
+const emptyData = () => ({ guests:[], food:[], todos:[], gifts:[] });
 let data = emptyData();
 
 async function fetchAll(){
@@ -362,13 +466,16 @@ const updateRow = (kind, id, patch) => db(supa.from(TABLES[kind]).update(patch).
 const deleteRow = (kind, id) => db(supa.from(TABLES[kind]).delete().eq("id", id), "Não foi possível apagar");
 
 /* ---------------- separadores ---------------- */
-const VIEWS = ["guests","food","todo"];
+const VIEWS = ["guests","food","todo","gifts"];
 function showView(v){
   document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.view===v)));
   VIEWS.forEach(n=>$("#view-"+n).classList.toggle("hidden", n!==v));
   try{ localStorage.setItem("party-time-tab", v); }catch(e){}
 }
-document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showView(t.dataset.view));
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  showView(t.dataset.view);
+  if(t.dataset.view==="gifts") showGiftsScreen("list");
+});
 
 /* ================= CONVIDADOS ================= */
 let guestFilter = "all";
@@ -631,8 +738,117 @@ $("#todo-filter").onclick = e=>{
   todoFilter = b.dataset.f; renderTodos();
 };
 
+/* ================= PRENDAS (copiado da Kitty Quest) ================= */
+const GIFT_CATS = [
+  {id:"aniversario", label:"Aniversário", tone:"var(--pink)"},
+  {id:"natal",       label:"Natal",       tone:"var(--green)"}
+];
+const giftCat = id => GIFT_CATS.find(c=>c.id===id) || GIFT_CATS[0];
+const formatEuro = v => (Number(v)||0).toLocaleString("pt-PT", {style:"currency", currency:"EUR"});
+const GIFT_FIELDS = ["#g-item","#g-recipient","#g-buyer","#g-giver","#g-value"];
+$("#g-cat").innerHTML = GIFT_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join("");
+
+function showGiftsScreen(name){
+  $("#gifts-list").classList.toggle("hidden", name!=="list");
+  $("#gift-add").classList.toggle("hidden", name!=="add");
+}
+$("#go-add-gift").onclick = () => {
+  GIFT_FIELDS.forEach(f=>$(f).value="");
+  $("#g-item").classList.remove("invalid");
+  $("#g-cat").value = GIFT_CATS[0].id;
+  showGiftsScreen("add");
+  $("#g-item").focus();
+};
+$("#gift-add-back").onclick = () => showGiftsScreen("list");
+
+function giftCard(g){
+  const c = giftCat(g.category);
+  return `<article class="item ${g.settled?"settled":""}" style="--tone:${c.tone}">
+    <button class="del" data-gfdel="${g.id}" aria-label="Apagar ${esc(g.item)}">×</button>
+    <div class="body">
+      <h3>${esc(g.item)}</h3>
+      ${g.recipient?`<p class="gift-for">Para: ${esc(g.recipient)}</p>`:""}
+      <div class="meta">
+        <span class="pill" style="--tint:color-mix(in srgb, ${c.tone} 28%, white)">${c.label}</span>
+        ${g.buyer?`<span class="pill plain">Compra: ${esc(g.buyer)}</span>`:""}
+        ${g.giver?`<span class="pill plain">Dá: ${esc(g.giver)}</span>`:""}
+        <span class="pill plain">${formatEuro(g.value)}</span>
+      </div>
+      <button class="settle-btn" data-settle="${g.id}">${g.settled?"Dívida saldada ✓":"Marcar como saldada"}</button>
+    </div>
+  </article>`;
+}
+
+function totalsByKey(list, keyFn){
+  const sums = {};
+  list.forEach(g=>{
+    const key = keyFn(g) || "Sem indicação";
+    sums[key] = (sums[key]||0) + (Number(g.value)||0);
+  });
+  return Object.keys(sums).sort((a,b)=>a.localeCompare(b,"pt")).map(k=>({label:k, value:sums[k]}));
+}
+function totalRowsHtml(rows){
+  return rows.length
+    ? rows.map(r=>`<div class="buyer-row"><span>${esc(r.label)}</span><span>${formatEuro(r.value)}</span></div>`).join("")
+    : `<p class="totals-empty">Sem valores.</p>`;
+}
+
+function renderGifts(){
+  const gifts = [...data.gifts].reverse();  // mais recentes primeiro
+  $("#gifts-items").innerHTML = gifts.length
+    ? `<div class="items">${gifts.map(giftCard).join("")}</div>`
+    : `<div class="empty-note"><strong>Ainda não há prendas</strong>Usa o botão "Nova prenda" para começar.</div>`;
+
+  const unsettled = data.gifts.filter(g=>!g.settled);
+  $("#gifts-total").textContent = formatEuro(unsettled.reduce((sum,g)=>sum+(Number(g.value)||0), 0));
+  $("#gifts-by-buyer").innerHTML = totalRowsHtml(totalsByKey(unsettled, g=>g.buyer));
+  $("#gifts-by-giver").innerHTML = totalRowsHtml(totalsByKey(unsettled, g=>g.giver));
+  const byCatHtml = GIFT_CATS.map(c=>{
+    const inCat = unsettled.filter(g=>g.category===c.id);
+    if(!inCat.length) return "";
+    return `<div class="cat-group"><span class="cat-name">${c.label}</span>${totalRowsHtml(totalsByKey(inCat, g=>g.recipient))}</div>`;
+  }).join("");
+  $("#gifts-by-recipient").innerHTML = byCatHtml || `<p class="totals-empty">Sem valores.</p>`;
+}
+
+$("#gift-form").onsubmit = async e=>{
+  e.preventDefault();
+  const item = $("#g-item").value.trim();
+  if(!item){ $("#g-item").classList.add("invalid"); $("#g-item").focus(); return; }
+  $("#g-item").classList.remove("invalid");
+  const payload = {
+    item,
+    recipient: $("#g-recipient").value.trim() || null,
+    category: $("#g-cat").value,
+    buyer: $("#g-buyer").value.trim() || null,
+    giver: $("#g-giver").value.trim() || null,
+    value: Math.max(0, Number($("#g-value").value) || 0)
+  };
+  $("#g-save").disabled = true;
+  const ok = await insertRow("gifts", payload);
+  $("#g-save").disabled = false;
+  if(!ok) return;
+  GIFT_FIELDS.forEach(f=>$(f).value="");
+  renderGifts();
+  showGiftsScreen("list");
+};
+
+$("#gifts-items").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.settle){
+    const g = data.gifts.find(x=>x.id===b.dataset.settle);
+    g.settled = !g.settled;
+    renderGifts(); updateRow("gifts", g.id, {settled:g.settled});
+  } else if(b.dataset.gfdel){
+    const g = data.gifts.find(x=>x.id===b.dataset.gfdel);
+    if(!confirm(`Apagar ${g.item}?`)) return;
+    data.gifts = data.gifts.filter(x=>x.id!==g.id);
+    renderGifts(); deleteRow("gifts", g.id);
+  }
+};
+
 /* ---------------- arranque ---------------- */
-function renderAll(){ renderGuests(); renderFood(); renderTodos(); }
+function renderAll(){ renderGuests(); renderFood(); renderTodos(); renderGifts(); }
 
 renderAll();  // desenha a app já vazia — nunca fica em branco enquanto liga ao Supabase
 try{
