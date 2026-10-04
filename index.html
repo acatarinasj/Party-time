@@ -117,6 +117,10 @@
   .item{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);position:relative}
   .item h3{font-size:17px;margin:0 0 8px;line-height:1.2;padding-right:56px;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px}
   .item h3::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;background:var(--tone,var(--mint))}
+  .item.food h3::before{display:none}
+  .item.food h3 .check{width:22px;height:22px;font-size:12px}
+  .item.food.done h3 span{text-decoration:line-through;color:#B5BCC7}
+  .item.food.done .meta{opacity:.5}
   .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   .pill{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--tint,var(--soft));color:var(--ink)}
   .pill.plain{background:var(--soft);color:var(--muted)}
@@ -150,11 +154,11 @@
   .task-list{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
   .task{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-top:1px solid var(--line)}
   .task:first-child{border-top:0}
-  .task .check{
+  .check{
     flex:none;width:24px;height:24px;border-radius:50%;border:2px solid #D6DBE2;background:var(--paper);
     cursor:pointer;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;padding:0;transition:background .2s,border-color .2s
   }
-  .task .check[aria-pressed="true"]{background:var(--green);border-color:var(--green)}
+  .check[aria-pressed="true"]{background:var(--green);border-color:var(--green)}
   .task .txt{flex:1;font-size:15px;font-weight:600;overflow-wrap:anywhere}
   .task.done .txt{text-decoration:line-through;color:#B5BCC7}
   .task .del{position:static;flex:none}
@@ -167,7 +171,7 @@
   .task.done .who{opacity:.5}
   .progress{height:6px;border-radius:999px;background:var(--soft);overflow:hidden;margin:0 0 14px}
   .progress > div{height:100%;background:linear-gradient(90deg,var(--pink),var(--yellow),var(--green));width:0;transition:width .3s}
-  #todo-count{background:transparent;padding:0;color:var(--muted)}
+  #todo-count,#food-count{background:transparent;padding:0;color:var(--muted)}
 
   .empty-note{border:1.5px dashed var(--line);border-radius:var(--radius);padding:26px 18px;text-align:center;color:var(--muted);font-size:14px}
   .empty-note strong{display:block;font-family:"Fredoka",sans-serif;font-weight:600;font-size:17px;color:var(--ink);margin-bottom:4px}
@@ -251,10 +255,10 @@
   <!-- ======== COMIDA ======== -->
   <section id="view-food" role="tabpanel" aria-labelledby="tab-food" class="hidden">
     <div class="card">
-      <h2 id="f-form-title">Novo ingrediente</h2>
+      <h2 id="f-form-title">Novo item</h2>
       <form class="form-row food" id="food-form" autocomplete="off">
         <div>
-          <label for="f-name">Ingrediente</label>
+          <label for="f-name">Item</label>
           <input id="f-name" placeholder="Pão de forma" required>
         </div>
         <div>
@@ -271,7 +275,8 @@
     </div>
 
     <div class="section-head">
-      <h2>Ingredientes</h2>
+      <h2>Itens</h2>
+      <span class="pill plain" id="food-count"></span>
     </div>
     <div class="filters" id="food-filter"></div>
     <div id="food-items"></div>
@@ -487,17 +492,21 @@ function renderFood(){
   renderPeopleList();
   foodFilter = renderWhoChips($("#food-filter"), data.food, foodFilter);
   const list = data.food.filter(f=>matchWho(f, foodFilter));
-  $("#food-items").innerHTML = list.length
-    ? `<div class="items">${list.map(foodCard).join("")}</div>`
-    : `<div class="empty-note"><strong>Ainda não há ingredientes</strong>Adiciona o que é preciso, quanto e quem trata disso.</div>`;
+  const ready = data.food.filter(f=>f.done).length;
+  $("#food-count").textContent = data.food.length ? `${ready} de ${data.food.length} prontos` : "";
+  // por tratar primeiro, prontos no fim
+  const sorted = [...list.filter(f=>!f.done), ...list.filter(f=>f.done)];
+  $("#food-items").innerHTML = sorted.length
+    ? `<div class="items">${sorted.map(foodCard).join("")}</div>`
+    : `<div class="empty-note"><strong>Ainda não há itens</strong>Adiciona o que é preciso, quanto e quem trata disso.</div>`;
 }
 
 function foodCard(f){
-  return `<article class="item" style="--tone:${f.who?toneFor(f.who):"#D6DBE2"}">
+  return `<article class="item food ${f.done?"done":""}">
     <button class="edit" data-fedit="${f.id}" aria-label="Editar ${esc(f.name)}">✎</button>
     <button class="del" data-fdel="${f.id}" aria-label="Apagar ${esc(f.name)}">×</button>
     <div class="body">
-      <h3>${esc(f.name)}</h3>
+      <h3><button class="check" data-fdone="${f.id}" aria-pressed="${!!f.done}" aria-label="Marcar ${esc(f.name)} como pronto">${f.done?"✓":""}</button><span>${esc(f.name)}</span></h3>
       <div class="meta">
         ${f.qty?`<span class="pill plain">${esc(f.qty)}</span>`:""}
         ${f.who?`<span class="pill" style="--tint:${tint(f.who)}">${esc(f.who)}</span>`:`<span class="pill plain">Sem responsável</span>`}
@@ -509,7 +518,7 @@ function foodCard(f){
 function resetFoodForm(){
   editingFoodId = null;
   $("#f-name").value = $("#f-qty").value = $("#f-who").value = "";
-  $("#f-form-title").textContent = "Novo ingrediente";
+  $("#f-form-title").textContent = "Novo item";
   $("#f-save").textContent = "Adicionar";
 }
 
@@ -538,11 +547,15 @@ $("#food-filter").onclick = e=>{
 
 $("#food-items").onclick = e=>{
   const b = e.target.closest("button"); if(!b) return;
-  if(b.dataset.fedit){
+  if(b.dataset.fdone){
+    const f = data.food.find(x=>x.id===b.dataset.fdone);
+    f.done = !f.done;
+    renderFood(); updateRow("food", f.id, {done:f.done});
+  } else if(b.dataset.fedit){
     const f = data.food.find(x=>x.id===b.dataset.fedit);
     editingFoodId = f.id;
     $("#f-name").value = f.name; $("#f-qty").value = f.qty||""; $("#f-who").value = f.who||"";
-    $("#f-form-title").textContent = "Editar ingrediente";
+    $("#f-form-title").textContent = "Editar item";
     $("#f-save").textContent = "Guardar";
     $("#food-form").scrollIntoView({behavior:"smooth", block:"center"});
     $("#f-name").focus({preventScroll:true});
