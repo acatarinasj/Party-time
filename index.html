@@ -82,7 +82,7 @@
   .form-row{display:grid;gap:10px;align-items:end}
   .form-row.guests{grid-template-columns:2fr 1fr auto}
   .form-row.food{grid-template-columns:2fr 1fr 1.4fr auto}
-  .form-row.todo{grid-template-columns:1fr auto}
+  .form-row.todo{grid-template-columns:2fr 1.2fr auto}
   @media (max-width:640px){
     .form-row.guests,.form-row.food,.form-row.todo{grid-template-columns:1fr}
     .form-row .btn-cta{width:100%}
@@ -158,6 +158,13 @@
   .task .txt{flex:1;font-size:15px;font-weight:600;overflow-wrap:anywhere}
   .task.done .txt{text-decoration:line-through;color:#B5BCC7}
   .task .del{position:static;flex:none}
+  .task .who{
+    flex:none;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;border:0;border-radius:999px;padding:4px 10px;
+    background:var(--tint,var(--soft));color:var(--ink);max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+  }
+  .task .who.none{background:transparent;color:#B5BCC7;border:1px dashed #D6DBE2}
+  .task .who:hover{filter:brightness(.96)}
+  .task.done .who{opacity:.5}
   .progress{height:6px;border-radius:999px;background:var(--soft);overflow:hidden;margin:0 0 14px}
   .progress > div{height:100%;background:linear-gradient(90deg,var(--pink),var(--yellow),var(--green));width:0;transition:width .3s}
   #todo-count{background:transparent;padding:0;color:var(--muted)}
@@ -279,6 +286,10 @@
           <label for="t-text">Tarefa</label>
           <input id="t-text" placeholder="Comprar balões" required>
         </div>
+        <div>
+          <label for="t-who">Responsável</label>
+          <input id="t-who" placeholder="Ana" list="people">
+        </div>
         <button class="btn-cta" type="submit">Adicionar</button>
       </form>
     </div>
@@ -288,6 +299,7 @@
       <span class="pill plain" id="todo-count"></span>
     </div>
     <div class="progress" aria-hidden="true"><div id="todo-bar"></div></div>
+    <div class="filters" id="todo-filter"></div>
     <div id="todo-items"></div>
   </section>
 
@@ -449,21 +461,32 @@ $("#guest-items").onclick = e=>{
   }
 };
 
+/* ---------------- responsáveis (partilhados entre Comida e To do) ---------------- */
+const namesOf = list => [...new Set(list.map(x=>x.who).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt"));
+const tint = w => `color-mix(in srgb, ${toneFor(w)} 28%, white)`;
+function renderPeopleList(){
+  $("#people").innerHTML = namesOf([...data.food, ...data.todos]).map(w=>`<option value="${esc(w)}">`).join("");
+}
+// botões de filtro por responsável; devolve o filtro válido
+function renderWhoChips(box, list, current){
+  const who = namesOf(list);
+  if(current!=="all" && current!=="none" && !who.includes(current)) current = "all";
+  const chips = [{f:"all",l:"Todos"}, ...who.map(w=>({f:w,l:w}))];
+  if(list.some(x=>!x.who)) chips.push({f:"none",l:"Sem responsável"});
+  box.innerHTML = list.length && who.length ? chips.map(c=>
+    `<button class="chip" data-f="${esc(c.f)}" aria-pressed="${current===c.f}">${esc(c.l)}</button>`).join("") : "";
+  return current;
+}
+const matchWho = (x, f) => f==="all" ? true : f==="none" ? !x.who : x.who===f;
+
 /* ================= COMIDA ================= */
 let foodFilter = "all";
 let editingFoodId = null;
 
 function renderFood(){
-  const who = [...new Set(data.food.map(f=>f.who).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt"));
-  $("#people").innerHTML = who.map(w=>`<option value="${esc(w)}">`).join("");
-  if(foodFilter!=="all" && foodFilter!=="none" && !who.includes(foodFilter)) foodFilter = "all";
-
-  const chips = [{f:"all",l:"Todos"}, ...who.map(w=>({f:w,l:w,t:toneFor(w)}))];
-  if(data.food.some(f=>!f.who)) chips.push({f:"none",l:"Sem responsável"});
-  $("#food-filter").innerHTML = data.food.length ? chips.map(c=>
-    `<button class="chip" data-f="${esc(c.f)}" aria-pressed="${foodFilter===c.f}">${esc(c.l)}</button>`).join("") : "";
-
-  const list = data.food.filter(f=> foodFilter==="all" ? true : foodFilter==="none" ? !f.who : f.who===foodFilter);
+  renderPeopleList();
+  foodFilter = renderWhoChips($("#food-filter"), data.food, foodFilter);
+  const list = data.food.filter(f=>matchWho(f, foodFilter));
   $("#food-items").innerHTML = list.length
     ? `<div class="items">${list.map(foodCard).join("")}</div>`
     : `<div class="empty-note"><strong>Ainda não há ingredientes</strong>Adiciona o que é preciso, quanto e quem trata disso.</div>`;
@@ -477,7 +500,7 @@ function foodCard(f){
       <h3>${esc(f.name)}</h3>
       <div class="meta">
         ${f.qty?`<span class="pill plain">${esc(f.qty)}</span>`:""}
-        ${f.who?`<span class="pill" style="--tint:color-mix(in srgb, ${toneFor(f.who)} 28%, white)">${esc(f.who)}</span>`:`<span class="pill plain">Sem responsável</span>`}
+        ${f.who?`<span class="pill" style="--tint:${tint(f.who)}">${esc(f.who)}</span>`:`<span class="pill plain">Sem responsável</span>`}
       </div>
     </div>
   </article>`;
@@ -533,18 +556,26 @@ $("#food-items").onclick = e=>{
 };
 
 /* ================= TO DO ================= */
+let todoFilter = "all";
+
 function renderTodos(){
+  renderPeopleList();
+  todoFilter = renderWhoChips($("#todo-filter"), data.todos, todoFilter);
   const t = data.todos;
   const done = t.filter(x=>x.done).length;
   $("#todo-count").textContent = `${done} de ${t.length} feitas`;
   $("#todo-bar").style.width = t.length ? (done/t.length*100)+"%" : "0";
   // por fazer primeiro, feitas no fim
-  const list = [...t.filter(x=>!x.done), ...t.filter(x=>x.done)];
+  const shown = t.filter(x=>matchWho(x, todoFilter));
+  const list = [...shown.filter(x=>!x.done), ...shown.filter(x=>x.done)];
   $("#todo-items").innerHTML = list.length
     ? `<ul class="task-list">${list.map(x=>`
       <li class="task ${x.done?"done":""}">
         <button class="check" data-tdone="${x.id}" aria-pressed="${!!x.done}" aria-label="Marcar ${esc(x.text)} como feita">${x.done?"✓":""}</button>
         <span class="txt">${esc(x.text)}</span>
+        ${x.who
+          ? `<button class="who" data-twho="${x.id}" style="--tint:${tint(x.who)}" aria-label="Responsável: ${esc(x.who)} (alterar)">${esc(x.who)}</button>`
+          : `<button class="who none" data-twho="${x.id}" aria-label="Atribuir responsável">+ Responsável</button>`}
         <button class="del" data-tdel="${x.id}" aria-label="Apagar ${esc(x.text)}">×</button>
       </li>`).join("")}</ul>`
     : `<div class="empty-note"><strong>Nada por fazer… por agora</strong>Adiciona a primeira tarefa da festa.</div>`;
@@ -555,11 +586,11 @@ $("#todo-form").onsubmit = async e=>{
   const text = $("#t-text").value.trim();
   if(!text) return;
   const btn = e.submitter; if(btn) btn.disabled = true;
-  const ok = await insertRow("todos", {text});
+  const ok = await insertRow("todos", {text, who:$("#t-who").value.trim()||null});
   if(btn) btn.disabled = false;
   if(!ok) return;
   renderTodos();
-  $("#t-text").value = ""; $("#t-text").focus();
+  $("#t-text").value = ""; $("#t-text").focus();  // o responsável fica preenchido para a próxima
 };
 
 $("#todo-items").onclick = e=>{
@@ -568,10 +599,21 @@ $("#todo-items").onclick = e=>{
     const x = data.todos.find(y=>y.id===b.dataset.tdone);
     x.done = !x.done;
     renderTodos(); updateRow("todos", x.id, {done:x.done});
+  } else if(b.dataset.twho){
+    const x = data.todos.find(y=>y.id===b.dataset.twho);
+    const who = prompt(`Responsável por "${x.text}" (deixa vazio para nenhum)`, x.who||"");
+    if(who===null) return;
+    x.who = who.trim() || null;
+    renderTodos(); updateRow("todos", x.id, {who:x.who});
   } else if(b.dataset.tdel){
     data.todos = data.todos.filter(y=>y.id!==b.dataset.tdel);
     renderTodos(); deleteRow("todos", b.dataset.tdel);
   }
+};
+
+$("#todo-filter").onclick = e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  todoFilter = b.dataset.f; renderTodos();
 };
 
 /* ---------------- arranque ---------------- */
