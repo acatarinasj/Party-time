@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Party Time — Convidar · Comer · Celebrar</title>
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><ellipse cx='32' cy='26' rx='18' ry='21' fill='%23FFA9DD' stroke='%2322355A' stroke-width='5'/><path d='M32 47l-4 6h8z' fill='%2322355A'/><path d='M32 53c-3 4 3 6 0 10' stroke='%2322355A' stroke-width='3' fill='none'/></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Party Time">
+<meta name="theme-color" content="#FDF8EF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:ital,wght@0,500;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#22355A;
+    --cream:#FDF8EF;
+    --paper:#FFFFFF;
+    --pink:#FFA9DD;
+    --orange:#FEB700;
+    --yellow:#FFE26F;
+    --lime:#C4E02F;
+    --sky:#7CD5D9;
+    --peri:#99ADFF;
+    --muted:#5B6C8C;
+    --shadow:0 8px 0 rgba(34,53,90,.12);
+    --radius:24px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:"Nunito",ui-rounded,"Segoe UI Rounded","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+    font-weight:600;
+    -webkit-font-smoothing:antialiased;
+    padding:0 16px 90px;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+
+  /* ---------- cabeçalho ---------- */
+  header.hero{padding:22px 0 6px;text-align:center}
+  .logo{display:inline-flex;align-items:center;gap:10px}
+  .logo svg{width:58px;height:70px;flex:none}
+  .logo-text{font-family:"Baloo 2",cursive;font-weight:800;font-size:46px;line-height:1;letter-spacing:.01em;
+    -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 rgba(34,53,90,.18)}
+  .logo-text span:nth-child(6n+1){color:var(--pink)}
+  .logo-text span:nth-child(6n+2){color:var(--orange)}
+  .logo-text span:nth-child(6n+3){color:var(--lime)}
+  .logo-text span:nth-child(6n+4){color:var(--sky)}
+  .logo-text span:nth-child(6n+5){color:var(--peri)}
+  .logo-text span:nth-child(6n+6){color:var(--yellow)}
+  .logo-text .sp{display:inline-block;width:.3em}
+  @media (max-width:420px){.logo-text{font-size:36px}.logo svg{width:44px;height:54px}}
+
+  /* ---------- separadores ---------- */
+  nav.tabs{display:flex;gap:8px;justify-content:center;margin:14px 0 20px;flex-wrap:wrap}
+  .tab{
+    font-family:"Baloo 2",cursive;font-size:17px;
+    background:var(--paper);color:var(--ink);
+    border:4px solid var(--ink);border-radius:999px;
+    padding:8px 20px;cursor:pointer;box-shadow:0 5px 0 rgba(34,53,90,.14);
+  }
+  .tab[aria-selected="true"]{background:var(--orange)}
+  .tab:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{
+    outline:4px solid var(--peri);outline-offset:3px
+  }
+
+  /* ---------- botões genéricos ---------- */
+  .btn-cta{
+    font-family:"Baloo 2",cursive;font-size:18px;cursor:pointer;
+    background:var(--orange);color:var(--ink);border:4px solid var(--ink);border-radius:999px;
+    padding:11px 22px;box-shadow:0 5px 0 rgba(34,53,90,.2);white-space:nowrap;
+  }
+  .btn-cta:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(34,53,90,.2)}
+  .btn-cta.ghost{background:var(--paper)}
+
+  /* ---------- cartões ---------- */
+  .card{background:var(--paper);border:4px solid var(--ink);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:18px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  h2{font-family:"Baloo 2",cursive;font-size:24px;margin:0}
+  .form-row{display:grid;gap:12px;align-items:end}
+  .form-row.guests{grid-template-columns:2fr 1fr auto}
+  .form-row.food{grid-template-columns:2fr 1fr 1.4fr auto}
+  .form-row.todo{grid-template-columns:1fr auto}
+  @media (max-width:640px){
+    .form-row.guests,.form-row.food,.form-row.todo{grid-template-columns:1fr}
+    .form-row .btn-cta{width:100%}
+  }
+  label{display:block;font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 5px}
+  input{
+    width:100%;font-family:inherit;font-weight:700;font-size:16px;color:var(--ink);
+    background:var(--cream);border:3px solid var(--ink);border-radius:16px;padding:11px 13px;
+  }
+
+  /* ---------- resumo ---------- */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px}
+  .stat{border:4px solid var(--ink);border-radius:20px;padding:12px 14px;background:var(--tone,var(--sky));box-shadow:0 6px 0 rgba(34,53,90,.16)}
+  .stat .num{display:block;font-family:"Baloo 2",cursive;font-size:30px;line-height:1}
+  .stat .lbl{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;color:var(--ink)}
+
+  /* ---------- filtros ---------- */
+  .filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+  .chip{
+    font-family:"Baloo 2",cursive;font-size:15px;cursor:pointer;
+    background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:6px 14px;color:var(--ink);
+  }
+  .chip[aria-pressed="true"]{background:var(--ink);color:var(--cream)}
+
+  /* ---------- itens ---------- */
+  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px}
+  .item{
+    background:var(--paper);border:4px solid var(--ink);border-radius:22px;padding:14px 14px 12px;
+    box-shadow:0 6px 0 rgba(34,53,90,.12);position:relative;overflow:hidden;
+  }
+  .item::before{content:"";position:absolute;inset:0 auto 0 0;width:11px;background:var(--tone,var(--sky))}
+  .item .body{padding-left:8px}
+  .item h3{font-family:"Baloo 2",cursive;font-size:20px;margin:0 0 6px;line-height:1.15;padding-right:58px;overflow-wrap:anywhere}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .pill{font-size:12.5px;font-weight:800;border-radius:999px;padding:4px 10px;border:2.5px solid var(--ink);background:var(--tone,var(--sky));color:var(--ink)}
+  .pill.plain{background:var(--cream)}
+  .del,.edit{
+    position:absolute;top:9px;width:26px;height:26px;border-radius:50%;
+    border:3px solid var(--ink);background:var(--paper);color:var(--ink);cursor:pointer;
+    font-size:14px;font-weight:800;line-height:1;display:grid;place-items:center;padding:0
+  }
+  .del{right:9px}
+  .edit{right:41px;font-size:13px}
+  .del:hover{background:var(--pink)}
+  .edit:hover{background:var(--yellow)}
+  .item.solo h3{padding-right:26px}
+
+  /* ---------- convidados ---------- */
+  .plus{display:flex;align-items:center;gap:8px;margin:4px 0 12px}
+  .plus .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:auto}
+  .step{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);background:var(--yellow);color:var(--ink);
+    font-family:"Baloo 2",cursive;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+  .step:disabled{opacity:.35;cursor:default}
+  .step:not(:disabled):active{transform:translateY(2px)}
+  .plus .count{font-family:"Baloo 2",cursive;font-size:22px;min-width:26px;text-align:center}
+  .toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .toggle{
+    font-family:"Baloo 2",cursive;font-size:15px;cursor:pointer;line-height:1.15;
+    background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:999px;
+    padding:8px 10px;box-shadow:0 4px 0 rgba(34,53,90,.16);
+  }
+  .toggle:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(34,53,90,.16)}
+  .toggle.sent[aria-pressed="true"]{background:var(--sky)}
+  .toggle.conf[aria-pressed="true"]{background:var(--lime)}
+
+  /* ---------- to do ---------- */
+  .task-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .task{
+    display:flex;align-items:center;gap:12px;background:var(--paper);border:4px solid var(--ink);
+    border-radius:20px;padding:10px 12px;box-shadow:0 5px 0 rgba(34,53,90,.12)
+  }
+  .task .check{
+    flex:none;width:32px;height:32px;border-radius:10px;border:3px solid var(--ink);background:var(--cream);
+    cursor:pointer;display:grid;place-items:center;font-size:18px;font-weight:800;color:var(--ink);padding:0
+  }
+  .task .check[aria-pressed="true"]{background:var(--lime)}
+  .task .txt{flex:1;font-size:16px;font-weight:700;overflow-wrap:anywhere}
+  .task.done .txt{text-decoration:line-through;color:var(--muted)}
+  .task .del{position:static;flex:none}
+  .progress{height:16px;border:3px solid var(--ink);border-radius:999px;background:var(--paper);overflow:hidden;margin:-4px 0 16px}
+  .progress > div{height:100%;background:var(--lime);width:0;transition:width .3s}
+
+  .empty-note{background:var(--paper);border:4px dashed var(--ink);border-radius:22px;padding:26px 18px;text-align:center;color:var(--muted);font-weight:700}
+  .empty-note strong{display:block;font-family:"Baloo 2",cursive;font-size:20px;color:var(--ink);margin-bottom:4px}
+  .hidden{display:none !important}
+  .boot-error{display:none;background:var(--pink);color:var(--ink);font-weight:800;border:3px solid var(--ink);border-radius:16px;padding:10px 14px;margin:16px 0;text-align:center}
+  footer{text-align:center;color:var(--muted);font-size:13px;letter-spacing:.16em;text-transform:uppercase;margin:26px 0 10px}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="logo" role="img" aria-label="Party Time">
+      <svg viewBox="0 0 58 70" aria-hidden="true">
+        <path d="M29 52c-4 5 4 8 0 14" stroke="#22355A" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M29 48l-4 6h8z" fill="#22355A"/>
+        <ellipse cx="29" cy="26" rx="20" ry="23" fill="#FFA9DD" stroke="#22355A" stroke-width="4"/>
+        <ellipse cx="21" cy="17" rx="4" ry="7" fill="#fff" opacity=".8" transform="rotate(20 21 17)"/>
+      </svg>
+      <span class="logo-text" aria-hidden="true"><span>P</span><span>a</span><span>r</span><span>t</span><span>y</span><span class="sp"></span><span>T</span><span>i</span><span>m</span><span>e</span></span>
+    </div>
+  </header>
+
+  <div id="boot-error" class="boot-error"></div>
+
+  <nav class="tabs" role="tablist" aria-label="Secções">
+    <button class="tab" role="tab" id="tab-guests" aria-selected="true" data-view="guests">Convidados</button>
+    <button class="tab" role="tab" id="tab-food" aria-selected="false" data-view="food">Comida</button>
+    <button class="tab" role="tab" id="tab-todo" aria-selected="false" data-view="todo">To do</button>
+  </nav>
+
+  <!-- ======== CONVIDADOS ======== -->
+  <section id="view-guests" role="tabpanel" aria-labelledby="tab-guests">
+    <div class="stats" id="guest-stats"></div>
+
+    <div class="card">
+      <h2 style="margin-bottom:14px">Novo convidado</h2>
+      <form class="form-row guests" id="guest-form" autocomplete="off">
+        <div>
+          <label for="g-name">Nome</label>
+          <input id="g-name" placeholder="Maria Silva" required>
+        </div>
+        <div>
+          <label for="g-plus">Acompanhantes (+1)</label>
+          <input id="g-plus" type="number" min="0" step="1" value="0" inputmode="numeric">
+        </div>
+        <button class="btn-cta" type="submit">Adicionar</button>
+      </form>
+    </div>
+
+    <div class="section-head">
+      <h2>Lista de convidados</h2>
+    </div>
+    <div class="filters" id="guest-filter">
+      <button class="chip" data-f="all" aria-pressed="true">Todos</button>
+      <button class="chip" data-f="unsent" aria-pressed="false">Por enviar</button>
+      <button class="chip" data-f="sent" aria-pressed="false">Enviados</button>
+      <button class="chip" data-f="conf" aria-pressed="false">Confirmados</button>
+    </div>
+    <div id="guest-items"></div>
+  </section>
+
+  <!-- ======== COMIDA ======== -->
+  <section id="view-food" role="tabpanel" aria-labelledby="tab-food" class="hidden">
+    <div class="card">
+      <h2 id="f-form-title" style="margin-bottom:14px">Novo ingrediente</h2>
+      <form class="form-row food" id="food-form" autocomplete="off">
+        <div>
+          <label for="f-name">Ingrediente</label>
+          <input id="f-name" placeholder="Pão de forma" required>
+        </div>
+        <div>
+          <label for="f-qty">Quantidade</label>
+          <input id="f-qty" placeholder="2 pacotes">
+        </div>
+        <div>
+          <label for="f-who">Responsável</label>
+          <input id="f-who" placeholder="João" list="people">
+        </div>
+        <button class="btn-cta" type="submit" id="f-save">Adicionar</button>
+      </form>
+      <datalist id="people"></datalist>
+    </div>
+
+    <div class="section-head">
+      <h2>Ingredientes</h2>
+    </div>
+    <div class="filters" id="food-filter"></div>
+    <div id="food-items"></div>
+  </section>
+
+  <!-- ======== TO DO ======== -->
+  <section id="view-todo" role="tabpanel" aria-labelledby="tab-todo" class="hidden">
+    <div class="card">
+      <h2 style="margin-bottom:14px">Nova tarefa</h2>
+      <form class="form-row todo" id="todo-form" autocomplete="off">
+        <div>
+          <label for="t-text">Tarefa</label>
+          <input id="t-text" placeholder="Comprar balões" required>
+        </div>
+        <button class="btn-cta" type="submit">Adicionar</button>
+      </form>
+    </div>
+
+    <div class="section-head">
+      <h2>Tarefas</h2>
+      <span class="pill plain" id="todo-count"></span>
+    </div>
+    <div class="progress" aria-hidden="true"><div id="todo-bar"></div></div>
+    <div id="todo-items"></div>
+  </section>
+
+  <footer>Convidar · Comer · Celebrar</footer>
+</div>
+
+<script>
+/* ---------------- proteção contra ecrã em branco ---------------- */
+window.addEventListener("error", e=>{
+  const bar = document.getElementById("boot-error");
+  if(bar){ bar.style.display="block"; bar.textContent = "Ups! Algo correu mal: " + (e.message||e); }
+});
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const TONES = ["var(--pink)","var(--sky)","var(--lime)","var(--peri)","var(--yellow)","var(--orange)"];
+const toneFor = s => { let h=0; for(const ch of String(s||"")) h=(h*31+ch.charCodeAt(0))>>>0; return TONES[h%TONES.length]; };
+
+/* ---------------- dados (guardados neste dispositivo) ---------------- */
+const STORE_KEY = "party-time-v1";
+let data = { guests:[], food:[], todos:[] };
+try{
+  const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+  if(saved) data = { guests:saved.guests||[], food:saved.food||[], todos:saved.todos||[] };
+}catch(e){}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){}
+}
+
+/* ---------------- separadores ---------------- */
+const VIEWS = ["guests","food","todo"];
+function showView(v){
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.view===v)));
+  VIEWS.forEach(n=>$("#view-"+n).classList.toggle("hidden", n!==v));
+  try{ localStorage.setItem(STORE_KEY+"-tab", v); }catch(e){}
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showView(t.dataset.view));
+
+/* ================= CONVIDADOS ================= */
+let guestFilter = "all";
+
+function renderGuests(){
+  const g = data.guests;
+  const people = g.reduce((n,x)=>n+1+(x.plus||0), 0);
+  const sent = g.filter(x=>x.sent).length;
+  const confGuests = g.filter(x=>x.confirmed);
+  const confPeople = confGuests.reduce((n,x)=>n+1+(x.plus||0), 0);
+  $("#guest-stats").innerHTML = [
+    {n:g.length,   l:"Convidados",        t:"var(--pink)"},
+    {n:people,     l:"Pessoas (com +1)",  t:"var(--yellow)"},
+    {n:sent,       l:"Convites enviados", t:"var(--sky)"},
+    {n:confPeople, l:"Pessoas confirmadas", t:"var(--lime)"}
+  ].map(s=>`<div class="stat" style="--tone:${s.t}"><span class="num">${s.n}</span><span class="lbl">${s.l}</span></div>`).join("");
+
+  const list = g.filter(x=>
+    guestFilter==="all" ? true :
+    guestFilter==="unsent" ? !x.sent :
+    guestFilter==="sent" ? x.sent : x.confirmed);
+
+  $("#guest-items").innerHTML = list.length
+    ? `<div class="items">${list.map(guestCard).join("")}</div>`
+    : g.length
+      ? `<div class="empty-note"><strong>Ninguém aqui</strong>Nenhum convidado corresponde a este filtro.</div>`
+      : `<div class="empty-note"><strong>Ainda não há convidados</strong>Adiciona o primeiro nome acima para começar a lista.</div>`;
+}
+
+function guestCard(x){
+  const plus = x.plus||0;
+  return `<article class="item" style="--tone:${x.confirmed?"var(--lime)":x.sent?"var(--sky)":"var(--pink)"}">
+    <button class="edit" data-gedit="${x.id}" aria-label="Editar nome de ${esc(x.name)}">✎</button>
+    <button class="del" data-gdel="${x.id}" aria-label="Apagar ${esc(x.name)}">×</button>
+    <div class="body">
+      <h3>${esc(x.name)}</h3>
+      <div class="plus">
+        <span class="lbl">Acompanhantes</span>
+        <button class="step" data-gplus="${x.id}" data-d="-1" ${plus<=0?"disabled":""} aria-label="Menos um acompanhante">−</button>
+        <span class="count" aria-live="polite">+${plus}</span>
+        <button class="step" data-gplus="${x.id}" data-d="1" aria-label="Mais um acompanhante">+</button>
+      </div>
+      <div class="toggles">
+        <button class="toggle sent" data-gsent="${x.id}" aria-pressed="${!!x.sent}">${x.sent?"Enviado ✓":"Convite enviado"}</button>
+        <button class="toggle conf" data-gconf="${x.id}" aria-pressed="${!!x.confirmed}">${x.confirmed?"Confirmado ✓":"Confirmado"}</button>
+      </div>
+    </div>
+  </article>`;
+}
+
+$("#guest-form").onsubmit = e=>{
+  e.preventDefault();
+  const name = $("#g-name").value.trim();
+  if(!name) return;
+  const plus = Math.max(0, parseInt($("#g-plus").value,10) || 0);
+  data.guests.push({id:uid(), name, plus, sent:false, confirmed:false});
+  save(); renderGuests();
+  $("#g-name").value = ""; $("#g-plus").value = "0"; $("#g-name").focus();
+};
+
+$("#guest-filter").onclick = e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  guestFilter = b.dataset.f;
+  document.querySelectorAll("#guest-filter .chip").forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+  renderGuests();
+};
+
+$("#guest-items").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  const find = id => data.guests.find(x=>x.id===id);
+  if(b.dataset.gplus){
+    const x = find(b.dataset.gplus);
+    x.plus = Math.max(0, (x.plus||0) + Number(b.dataset.d));
+  } else if(b.dataset.gsent){
+    const x = find(b.dataset.gsent);
+    x.sent = !x.sent;
+  } else if(b.dataset.gconf){
+    const x = find(b.dataset.gconf);
+    x.confirmed = !x.confirmed;
+    if(x.confirmed) x.sent = true; // quem confirmou recebeu o convite
+  } else if(b.dataset.gedit){
+    const x = find(b.dataset.gedit);
+    const name = prompt("Nome do convidado", x.name);
+    if(name===null || !name.trim()) return;
+    x.name = name.trim();
+  } else if(b.dataset.gdel){
+    const x = find(b.dataset.gdel);
+    if(!confirm(`Apagar ${x.name}?`)) return;
+    data.guests = data.guests.filter(y=>y.id!==x.id);
+  } else return;
+  save(); renderGuests();
+};
+
+/* ================= COMIDA ================= */
+let foodFilter = "all";
+let editingFoodId = null;
+
+function renderFood(){
+  const who = [...new Set(data.food.map(f=>f.who).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt"));
+  $("#people").innerHTML = who.map(w=>`<option value="${esc(w)}">`).join("");
+  if(foodFilter!=="all" && foodFilter!=="none" && !who.includes(foodFilter)) foodFilter = "all";
+
+  const chips = [{f:"all",l:"Todos"}, ...who.map(w=>({f:w,l:w,t:toneFor(w)}))];
+  if(data.food.some(f=>!f.who)) chips.push({f:"none",l:"Sem responsável"});
+  $("#food-filter").innerHTML = data.food.length ? chips.map(c=>
+    `<button class="chip" data-f="${esc(c.f)}" aria-pressed="${foodFilter===c.f}">${esc(c.l)}</button>`).join("") : "";
+
+  const list = data.food.filter(f=> foodFilter==="all" ? true : foodFilter==="none" ? !f.who : f.who===foodFilter);
+  $("#food-items").innerHTML = list.length
+    ? `<div class="items">${list.map(foodCard).join("")}</div>`
+    : `<div class="empty-note"><strong>Ainda não há ingredientes</strong>Adiciona o que é preciso, quanto e quem trata disso.</div>`;
+}
+
+function foodCard(f){
+  return `<article class="item" style="--tone:${f.who?toneFor(f.who):"var(--cream)"}">
+    <button class="edit" data-fedit="${f.id}" aria-label="Editar ${esc(f.name)}">✎</button>
+    <button class="del" data-fdel="${f.id}" aria-label="Apagar ${esc(f.name)}">×</button>
+    <div class="body">
+      <h3>${esc(f.name)}</h3>
+      <div class="meta">
+        ${f.qty?`<span class="pill plain">${esc(f.qty)}</span>`:""}
+        ${f.who?`<span class="pill">${esc(f.who)}</span>`:`<span class="pill plain">Sem responsável</span>`}
+      </div>
+    </div>
+  </article>`;
+}
+
+function resetFoodForm(){
+  editingFoodId = null;
+  $("#f-name").value = $("#f-qty").value = $("#f-who").value = "";
+  $("#f-form-title").textContent = "Novo ingrediente";
+  $("#f-save").textContent = "Adicionar";
+}
+
+$("#food-form").onsubmit = e=>{
+  e.preventDefault();
+  const name = $("#f-name").value.trim();
+  if(!name) return;
+  const item = { name, qty:$("#f-qty").value.trim(), who:$("#f-who").value.trim() };
+  if(editingFoodId){
+    Object.assign(data.food.find(f=>f.id===editingFoodId), item);
+  } else {
+    data.food.push({id:uid(), ...item});
+  }
+  save(); resetFoodForm(); renderFood(); $("#f-name").focus();
+};
+
+$("#food-filter").onclick = e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  foodFilter = b.dataset.f; renderFood();
+};
+
+$("#food-items").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.fedit){
+    const f = data.food.find(x=>x.id===b.dataset.fedit);
+    editingFoodId = f.id;
+    $("#f-name").value = f.name; $("#f-qty").value = f.qty||""; $("#f-who").value = f.who||"";
+    $("#f-form-title").textContent = "Editar ingrediente";
+    $("#f-save").textContent = "Guardar";
+    $("#food-form").scrollIntoView({behavior:"smooth", block:"center"});
+    $("#f-name").focus({preventScroll:true});
+  } else if(b.dataset.fdel){
+    const f = data.food.find(x=>x.id===b.dataset.fdel);
+    if(!confirm(`Apagar ${f.name}?`)) return;
+    data.food = data.food.filter(x=>x.id!==f.id);
+    if(editingFoodId===f.id) resetFoodForm();
+    save(); renderFood();
+  }
+};
+
+/* ================= TO DO ================= */
+function renderTodos(){
+  const t = data.todos;
+  const done = t.filter(x=>x.done).length;
+  $("#todo-count").textContent = `${done} de ${t.length} feitas`;
+  $("#todo-bar").style.width = t.length ? (done/t.length*100)+"%" : "0";
+  // por fazer primeiro, feitas no fim
+  const list = [...t.filter(x=>!x.done), ...t.filter(x=>x.done)];
+  $("#todo-items").innerHTML = list.length
+    ? `<ul class="task-list">${list.map(x=>`
+      <li class="task ${x.done?"done":""}">
+        <button class="check" data-tdone="${x.id}" aria-pressed="${!!x.done}" aria-label="Marcar ${esc(x.text)} como feita">${x.done?"✓":""}</button>
+        <span class="txt">${esc(x.text)}</span>
+        <button class="del" data-tdel="${x.id}" aria-label="Apagar ${esc(x.text)}">×</button>
+      </li>`).join("")}</ul>`
+    : `<div class="empty-note"><strong>Nada por fazer… por agora</strong>Adiciona a primeira tarefa da festa.</div>`;
+}
+
+$("#todo-form").onsubmit = e=>{
+  e.preventDefault();
+  const text = $("#t-text").value.trim();
+  if(!text) return;
+  data.todos.push({id:uid(), text, done:false});
+  save(); renderTodos();
+  $("#t-text").value = ""; $("#t-text").focus();
+};
+
+$("#todo-items").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.tdone){
+    const x = data.todos.find(y=>y.id===b.dataset.tdone);
+    x.done = !x.done;
+  } else if(b.dataset.tdel){
+    data.todos = data.todos.filter(y=>y.id!==b.dataset.tdel);
+  } else return;
+  save(); renderTodos();
+};
+
+/* ---------------- arranque ---------------- */
+renderGuests(); renderFood(); renderTodos();
+try{
+  const tab = localStorage.getItem(STORE_KEY+"-tab");
+  if(VIEWS.includes(tab)) showView(tab);
+}catch(e){}
+</script>
+</body>
+</html>
