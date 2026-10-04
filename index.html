@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:ital,wght@0,500;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --ink:#22355A;
@@ -75,12 +76,19 @@
     padding:11px 22px;box-shadow:0 5px 0 rgba(34,53,90,.2);white-space:nowrap;
   }
   .btn-cta:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(34,53,90,.2)}
-  .btn-cta.ghost{background:var(--paper)}
+  .btn-cta.full{width:100%}
+  .btn-cta:disabled{opacity:.6;cursor:default}
+  .back-btn{
+    font-family:"Baloo 2",cursive;font-size:16px;cursor:pointer;background:var(--paper);
+    color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:7px 16px;
+  }
+  .back-btn:hover{background:var(--peri)}
 
   /* ---------- cartões ---------- */
   .card{background:var(--paper);border:4px solid var(--ink);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:18px}
   .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   h2{font-family:"Baloo 2",cursive;font-size:24px;margin:0}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
   .form-row{display:grid;gap:12px;align-items:end}
   .form-row.guests{grid-template-columns:2fr 1fr auto}
   .form-row.food{grid-template-columns:2fr 1fr 1.4fr auto}
@@ -192,6 +200,32 @@
 
   <div id="boot-error" class="boot-error"></div>
 
+  <!-- ======== LOGIN ======== -->
+  <div id="login-screen" class="hidden">
+    <div class="card" style="max-width:380px;margin:20px auto">
+      <h2 style="margin-bottom:14px;text-align:center">Entrar</h2>
+      <form class="grid" id="login-form">
+        <div>
+          <label for="login-user">Utilizador (email)</label>
+          <input id="login-user" type="email" autocomplete="username" placeholder="familia@exemplo.com">
+        </div>
+        <div>
+          <label for="login-pass">Palavra-passe</label>
+          <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <div id="login-error" style="display:none;color:var(--ink);background:var(--pink);border:2.5px solid var(--ink);border-radius:14px;padding:8px 12px;font-size:14px;text-align:center"></div>
+        <button class="btn-cta full" id="login-btn" type="submit">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======== APP (só visível depois de entrar) ======== -->
+  <div id="app-content" class="hidden">
+
+  <div style="text-align:right;margin:0 0 10px">
+    <button class="back-btn" id="logout-btn">Sair</button>
+  </div>
+
   <nav class="tabs" role="tablist" aria-label="Secções">
     <button class="tab" role="tab" id="tab-guests" aria-selected="true" data-view="guests">Convidados</button>
     <button class="tab" role="tab" id="tab-food" aria-selected="false" data-view="food">Comida</button>
@@ -280,6 +314,7 @@
   </section>
 
   <footer>Convidar · Comer · Celebrar</footer>
+  </div><!-- /app-content -->
 </div>
 
 <script>
@@ -291,27 +326,51 @@ window.addEventListener("error", e=>{
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const TONES = ["var(--pink)","var(--sky)","var(--lime)","var(--peri)","var(--yellow)","var(--orange)"];
 const toneFor = s => { let h=0; for(const ch of String(s||"")) h=(h*31+ch.charCodeAt(0))>>>0; return TONES[h%TONES.length]; };
 
-/* ---------------- dados (guardados neste dispositivo) ---------------- */
-const STORE_KEY = "party-time-v1";
-let data = { guests:[], food:[], todos:[] };
-try{
-  const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-  if(saved) data = { guests:saved.guests||[], food:saved.food||[], todos:saved.todos||[] };
-}catch(e){}
-function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){}
+/* ---------------- Supabase (mesmo projeto e login da Kitty Quest) ---------------- */
+const SUPABASE_URL = "https://nvbsddegwrfehvyclpsd.supabase.co";
+const SUPABASE_KEY = "sb_publishable_USK5NaKdSEoFQnROFr3fXg_gYb00Tsg";
+const supa = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+/* ---------------- dados (guardados no Supabase, não no dispositivo) ---------------- */
+const TABLES = { guests:"pt_guests", food:"pt_food", todos:"pt_todos" };
+const emptyData = () => ({ guests:[], food:[], todos:[] });
+let data = emptyData();
+
+async function fetchAll(){
+  if(!supa) return;
+  const res = await Promise.all(Object.values(TABLES).map(t=>
+    supa.from(t).select("*").order("created_at", {ascending:true})));
+  Object.keys(TABLES).forEach((k,i)=>{
+    if(res[i].error) console.error(res[i].error);
+    else data[k] = res[i].data || [];
+  });
+  renderAll();
 }
+
+// executa a operação na base de dados; se falhar avisa e volta a carregar o estado real
+async function db(op, failMsg){
+  const { error } = await op;
+  if(error){ alert(failMsg + ": " + error.message); await fetchAll(); return false; }
+  return true;
+}
+async function insertRow(kind, row){
+  const { data:rows, error } = await supa.from(TABLES[kind]).insert(row).select();
+  if(error){ alert("Não foi possível guardar: " + error.message); return false; }
+  data[kind].push(rows[0]);
+  return true;
+}
+const updateRow = (kind, id, patch) => db(supa.from(TABLES[kind]).update(patch).eq("id", id), "Não foi possível atualizar");
+const deleteRow = (kind, id) => db(supa.from(TABLES[kind]).delete().eq("id", id), "Não foi possível apagar");
 
 /* ---------------- separadores ---------------- */
 const VIEWS = ["guests","food","todo"];
 function showView(v){
   document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", String(x.dataset.view===v)));
   VIEWS.forEach(n=>$("#view-"+n).classList.toggle("hidden", n!==v));
-  try{ localStorage.setItem(STORE_KEY+"-tab", v); }catch(e){}
+  try{ localStorage.setItem("party-time-tab", v); }catch(e){}
 }
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showView(t.dataset.view));
 
@@ -364,13 +423,16 @@ function guestCard(x){
   </article>`;
 }
 
-$("#guest-form").onsubmit = e=>{
+$("#guest-form").onsubmit = async e=>{
   e.preventDefault();
   const name = $("#g-name").value.trim();
   if(!name) return;
   const plus = Math.max(0, parseInt($("#g-plus").value,10) || 0);
-  data.guests.push({id:uid(), name, plus, sent:false, confirmed:false});
-  save(); renderGuests();
+  const btn = e.submitter; if(btn) btn.disabled = true;
+  const ok = await insertRow("guests", {name, plus});
+  if(btn) btn.disabled = false;
+  if(!ok) return;
+  renderGuests();
   $("#g-name").value = ""; $("#g-plus").value = "0"; $("#g-name").focus();
 };
 
@@ -384,27 +446,29 @@ $("#guest-filter").onclick = e=>{
 $("#guest-items").onclick = e=>{
   const b = e.target.closest("button"); if(!b) return;
   const find = id => data.guests.find(x=>x.id===id);
+  // atualiza já no ecrã e grava em segundo plano
+  const patch = (x, p) => { Object.assign(x, p); renderGuests(); updateRow("guests", x.id, p); };
   if(b.dataset.gplus){
     const x = find(b.dataset.gplus);
-    x.plus = Math.max(0, (x.plus||0) + Number(b.dataset.d));
+    patch(x, {plus: Math.max(0, (x.plus||0) + Number(b.dataset.d))});
   } else if(b.dataset.gsent){
     const x = find(b.dataset.gsent);
-    x.sent = !x.sent;
+    patch(x, {sent: !x.sent});
   } else if(b.dataset.gconf){
     const x = find(b.dataset.gconf);
-    x.confirmed = !x.confirmed;
-    if(x.confirmed) x.sent = true; // quem confirmou recebeu o convite
+    // quem confirmou recebeu o convite
+    patch(x, x.confirmed ? {confirmed:false} : {confirmed:true, sent:true});
   } else if(b.dataset.gedit){
     const x = find(b.dataset.gedit);
     const name = prompt("Nome do convidado", x.name);
     if(name===null || !name.trim()) return;
-    x.name = name.trim();
+    patch(x, {name: name.trim()});
   } else if(b.dataset.gdel){
     const x = find(b.dataset.gdel);
     if(!confirm(`Apagar ${x.name}?`)) return;
     data.guests = data.guests.filter(y=>y.id!==x.id);
-  } else return;
-  save(); renderGuests();
+    renderGuests(); deleteRow("guests", x.id);
+  }
 };
 
 /* ================= COMIDA ================= */
@@ -448,17 +512,22 @@ function resetFoodForm(){
   $("#f-save").textContent = "Adicionar";
 }
 
-$("#food-form").onsubmit = e=>{
+$("#food-form").onsubmit = async e=>{
   e.preventDefault();
   const name = $("#f-name").value.trim();
   if(!name) return;
-  const item = { name, qty:$("#f-qty").value.trim(), who:$("#f-who").value.trim() };
+  const item = { name, qty:$("#f-qty").value.trim()||null, who:$("#f-who").value.trim()||null };
+  $("#f-save").disabled = true;
+  let ok;
   if(editingFoodId){
-    Object.assign(data.food.find(f=>f.id===editingFoodId), item);
+    ok = await updateRow("food", editingFoodId, item);
+    if(ok) Object.assign(data.food.find(f=>f.id===editingFoodId) || {}, item);
   } else {
-    data.food.push({id:uid(), ...item});
+    ok = await insertRow("food", item);
   }
-  save(); resetFoodForm(); renderFood(); $("#f-name").focus();
+  $("#f-save").disabled = false;
+  if(!ok) return;
+  resetFoodForm(); renderFood(); $("#f-name").focus();
 };
 
 $("#food-filter").onclick = e=>{
@@ -481,7 +550,7 @@ $("#food-items").onclick = e=>{
     if(!confirm(`Apagar ${f.name}?`)) return;
     data.food = data.food.filter(x=>x.id!==f.id);
     if(editingFoodId===f.id) resetFoodForm();
-    save(); renderFood();
+    renderFood(); deleteRow("food", f.id);
   }
 };
 
@@ -503,12 +572,15 @@ function renderTodos(){
     : `<div class="empty-note"><strong>Nada por fazer… por agora</strong>Adiciona a primeira tarefa da festa.</div>`;
 }
 
-$("#todo-form").onsubmit = e=>{
+$("#todo-form").onsubmit = async e=>{
   e.preventDefault();
   const text = $("#t-text").value.trim();
   if(!text) return;
-  data.todos.push({id:uid(), text, done:false});
-  save(); renderTodos();
+  const btn = e.submitter; if(btn) btn.disabled = true;
+  const ok = await insertRow("todos", {text});
+  if(btn) btn.disabled = false;
+  if(!ok) return;
+  renderTodos();
   $("#t-text").value = ""; $("#t-text").focus();
 };
 
@@ -517,18 +589,68 @@ $("#todo-items").onclick = e=>{
   if(b.dataset.tdone){
     const x = data.todos.find(y=>y.id===b.dataset.tdone);
     x.done = !x.done;
+    renderTodos(); updateRow("todos", x.id, {done:x.done});
   } else if(b.dataset.tdel){
     data.todos = data.todos.filter(y=>y.id!==b.dataset.tdel);
-  } else return;
-  save(); renderTodos();
+    renderTodos(); deleteRow("todos", b.dataset.tdel);
+  }
 };
 
 /* ---------------- arranque ---------------- */
-renderGuests(); renderFood(); renderTodos();
+function renderAll(){ renderGuests(); renderFood(); renderTodos(); }
+
+renderAll();  // desenha a app já vazia — nunca fica em branco enquanto liga ao Supabase
 try{
-  const tab = localStorage.getItem(STORE_KEY+"-tab");
+  const tab = localStorage.getItem("party-time-tab");
   if(VIEWS.includes(tab)) showView(tab);
 }catch(e){}
+
+/* ---------------- autenticação ---------------- */
+function showLogin(msg){
+  $("#app-content").classList.add("hidden");
+  $("#login-screen").classList.remove("hidden");
+  const err = $("#login-error");
+  if(msg){ err.textContent = msg; err.style.display = "block"; }
+  else{ err.style.display = "none"; }
+}
+function showApp(){
+  $("#login-screen").classList.add("hidden");
+  $("#app-content").classList.remove("hidden");
+  fetchAll();
+}
+
+$("#login-form").onsubmit = async e => {
+  e.preventDefault();
+  if(!supa){ showLogin("A ligação à base de dados não está disponível."); return; }
+  const email = $("#login-user").value.trim();
+  const password = $("#login-pass").value;
+  if(!email || !password){ showLogin("Preenche o utilizador e a palavra-passe."); return; }
+  $("#login-btn").disabled = true;
+  const { error } = await supa.auth.signInWithPassword({ email, password });
+  $("#login-btn").disabled = false;
+  if(error){ showLogin("Não foi possível entrar: " + error.message); return; }
+  showApp();
+};
+
+$("#logout-btn").onclick = async () => {
+  if(supa) await supa.auth.signOut();
+  data = emptyData();
+  renderAll();
+  showLogin();
+};
+
+// a lista é partilhada: ao voltar à app, carrega as alterações feitas por outras pessoas
+document.addEventListener("visibilitychange", async () => {
+  if(document.visibilityState!=="visible" || !supa || $("#app-content").classList.contains("hidden")) return;
+  const { data:{session} } = await supa.auth.getSession();
+  if(session) fetchAll();
+});
+
+if(supa){
+  supa.auth.getSession().then(({data:{session}}) => { session ? showApp() : showLogin(); });
+} else {
+  showLogin("A ligação à base de dados não está disponível.");
+}
 </script>
 </body>
 </html>
