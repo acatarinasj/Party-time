@@ -108,12 +108,18 @@
   .login-error{display:none;background:#FFE9EC;color:#B4485A;border-radius:12px;padding:9px 12px;font-size:14px;text-align:center}
 
   /* ---------- resumo ---------- */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-  @media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
-  .stat{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 12px;position:relative}
-  .stat::after{content:"";position:absolute;top:14px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--tone,var(--mint))}
-  .stat .num{display:block;font-size:28px;line-height:1}
-  .stat .lbl{display:block;font-size:12px;color:var(--muted);margin-top:6px;font-weight:700}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--paper);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+  .stat{padding:14px 14px 12px;border-left:1px solid var(--line)}
+  .stat:first-child{border-left:0}
+  .stat .num{display:flex;align-items:center;gap:7px;font-size:24px;line-height:1}
+  .stat .num::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--tone,var(--mint))}
+  .stat .lbl{display:block;font-size:12px;color:var(--muted);margin-top:5px;font-weight:700}
+  @media (max-width:560px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .stat:nth-child(3){border-left:0}
+    .stat:nth-child(n+3){border-top:1px solid var(--line)}
+  }
 
   /* ---------- filtros ---------- */
   .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
@@ -124,11 +130,6 @@
   .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 
   /* ---------- itens ---------- */
-  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-  .item{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);position:relative}
-  .item h3{font-size:17px;margin:0 0 8px;line-height:1.2;padding-right:56px;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px}
-  .item h3::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;background:var(--tone,var(--mint))}
-  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   .pill{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--tint,var(--soft));color:var(--ink)}
   .pill.plain{background:var(--soft);color:var(--muted)}
   .del,.edit{
@@ -142,20 +143,24 @@
   .edit:hover{background:var(--soft);color:var(--ink)}
 
   /* ---------- convidados ---------- */
-  .plus{display:flex;align-items:center;gap:6px;margin:2px 0 12px}
-  .plus .lbl{font-size:12px;color:var(--muted);font-weight:700;margin-right:auto}
-  .step{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);
-    font-size:17px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+  .stepper{display:flex;align-items:center;gap:2px;flex:none}
+  .step{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);
+    font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
   .step:disabled{opacity:.35;cursor:default}
   .step:not(:disabled):hover{background:var(--soft)}
-  .plus .count{font-family:"Fredoka",sans-serif;font-size:17px;min-width:26px;text-align:center}
-  .toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .stepper .count{font-family:"Fredoka",sans-serif;font-size:15px;min-width:28px;text-align:center}
   .toggle{
-    font:inherit;font-size:13px;font-weight:700;cursor:pointer;line-height:1.15;
-    background:var(--soft);color:var(--muted);border:0;border-radius:999px;padding:9px 8px;transition:background .2s,color .2s;
+    flex:none;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;line-height:1;
+    background:var(--soft);color:var(--muted);border:0;border-radius:999px;padding:7px 11px;transition:background .2s,color .2s;
   }
   .toggle.sent[aria-pressed="true"]{background:#DDF3EE;color:#2F7A6A}
   .toggle.conf[aria-pressed="true"]{background:#FFE4CC;color:#A55E10}
+  .task .ctrls{display:flex;align-items:center;gap:8px;flex:none}
+  @media (max-width:600px){
+    .task.guest{flex-wrap:wrap;row-gap:8px}
+    .task.guest .txt{flex:1 1 0;min-width:0}
+    .task.guest .ctrls{order:3;flex-basis:100%;padding-left:2px;justify-content:space-between}
+  }
 
   /* ---------- to do ---------- */
   .task-list{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
@@ -178,10 +183,19 @@
   }
   .task .who.none{background:transparent;color:#B5BCC7;border:1px dashed #D6DBE2}
   .task .who:hover{filter:brightness(.96)}
+  span.who{cursor:default}
+  span.who:hover{filter:none}
+  .task .value{flex:none;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  .task.done .value{color:#B5BCC7}
+  @media (max-width:600px){
+    .task.gift{flex-wrap:wrap;row-gap:6px}
+    .task.gift .txt{flex:1 1 0;min-width:0}
+    .task.gift .ctrls{order:3;flex-basis:100%;padding-left:36px}
+  }
   .task.done .who{opacity:.5}
   .progress{height:6px;border-radius:999px;background:var(--soft);overflow:hidden;margin:0 0 14px}
   .progress > div{height:100%;background:linear-gradient(90deg,var(--pink),var(--yellow),var(--green));width:0;transition:width .3s}
-  #todo-count,#food-count{background:transparent;padding:0;color:var(--muted)}
+  #todo-count,#food-count,#guest-count,#gift-count{background:transparent;padding:0;color:var(--muted)}
 
   /* ---------- prendas ---------- */
   .totals-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
@@ -194,16 +208,6 @@
   .cat-name{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#B5BCC7;margin:6px 0 1px}
   .cat-group:first-child .cat-name{margin-top:0}
   .totals-empty{margin:0;font-size:13px;color:#B5BCC7}
-  .gift-for{margin:-2px 0 10px;font-size:14px;color:var(--muted)}
-  .settle-btn{
-    width:100%;margin-top:12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
-    background:var(--soft);color:var(--muted);border:0;border-radius:999px;padding:9px 8px;transition:background .2s,color .2s
-  }
-  .settle-btn:hover{color:var(--ink)}
-  .item.settled .settle-btn{background:#DDF3EE;color:#2F7A6A}
-  .item.settled h3,.item.settled .gift-for,.item.settled .meta{opacity:.5}
-  .item.settled h3{text-decoration:line-through}
-
   .empty-note{border:1.5px dashed var(--line);border-radius:var(--radius);padding:26px 18px;text-align:center;color:var(--muted);font-size:14px}
   .empty-note strong{display:block;font-family:"Fredoka",sans-serif;font-weight:600;font-size:17px;color:var(--ink);margin-bottom:4px}
   .hidden{display:none !important}
@@ -274,7 +278,9 @@
 
     <div class="section-head">
       <h2>Lista de convidados</h2>
+      <span class="pill plain" id="guest-count"></span>
     </div>
+    <div class="progress" aria-hidden="true"><div id="guest-bar"></div></div>
     <div class="filters" id="guest-filter">
       <button class="chip" data-f="all" aria-pressed="true">Todos</button>
       <button class="chip" data-f="unsent" aria-pressed="false">Por enviar</button>
@@ -370,6 +376,11 @@
           </div>
         </div>
       </div>
+      <div class="section-head">
+        <h2>Lista</h2>
+        <span class="pill plain" id="gift-count"></span>
+      </div>
+      <div class="progress" aria-hidden="true"><div id="gift-bar"></div></div>
       <div id="gifts-items"></div>
     </div>
 
@@ -492,37 +503,39 @@ function renderGuests(){
     {n:confPeople, l:"Pessoas confirmadas", t:"var(--orange)"}
   ].map(s=>`<div class="stat" style="--tone:${s.t}"><span class="num">${s.n}</span><span class="lbl">${s.l}</span></div>`).join("");
 
+  $("#guest-count").textContent = `${confGuests.length} de ${g.length} confirmados`;
+  $("#guest-bar").style.width = g.length ? (confGuests.length/g.length*100)+"%" : "0";
+
   const list = g.filter(x=>
     guestFilter==="all" ? true :
     guestFilter==="unsent" ? !x.sent :
     guestFilter==="sent" ? x.sent : x.confirmed);
 
   $("#guest-items").innerHTML = list.length
-    ? `<div class="items">${list.map(guestCard).join("")}</div>`
+    ? `<ul class="task-list">${list.map(guestRow).join("")}</ul>`
     : g.length
       ? `<div class="empty-note"><strong>Ninguém aqui</strong>Nenhum convidado corresponde a este filtro.</div>`
       : `<div class="empty-note"><strong>Ainda não há convidados</strong>Adiciona o primeiro nome acima para começar a lista.</div>`;
 }
 
-function guestCard(x){
+function guestRow(x){
   const plus = x.plus||0;
-  return `<article class="item" style="--tone:${x.confirmed?"var(--orange)":x.sent?"var(--mint)":"#D6DBE2"}">
+  return `<li class="task guest">
+    <span class="txt">${esc(x.name)}</span>
+    <div class="ctrls">
+      <span class="stepper" title="Acompanhantes">
+        <button class="step" data-gplus="${x.id}" data-d="-1" ${plus<=0?"disabled":""} aria-label="Menos um acompanhante">−</button>
+        <span class="count" aria-label="${plus} acompanhantes">+${plus}</span>
+        <button class="step" data-gplus="${x.id}" data-d="1" aria-label="Mais um acompanhante">+</button>
+      </span>
+      <span style="display:flex;gap:6px">
+        <button class="toggle sent" data-gsent="${x.id}" aria-pressed="${!!x.sent}">${x.sent?"Enviado ✓":"Enviado"}</button>
+        <button class="toggle conf" data-gconf="${x.id}" aria-pressed="${!!x.confirmed}">${x.confirmed?"Confirmado ✓":"Confirmado"}</button>
+      </span>
+    </div>
     <button class="edit" data-gedit="${x.id}" aria-label="Editar nome de ${esc(x.name)}">✎</button>
     <button class="del" data-gdel="${x.id}" aria-label="Apagar ${esc(x.name)}">×</button>
-    <div class="body">
-      <h3>${esc(x.name)}</h3>
-      <div class="plus">
-        <span class="lbl">Acompanhantes</span>
-        <button class="step" data-gplus="${x.id}" data-d="-1" ${plus<=0?"disabled":""} aria-label="Menos um acompanhante">−</button>
-        <span class="count" aria-live="polite">+${plus}</span>
-        <button class="step" data-gplus="${x.id}" data-d="1" aria-label="Mais um acompanhante">+</button>
-      </div>
-      <div class="toggles">
-        <button class="toggle sent" data-gsent="${x.id}" aria-pressed="${!!x.sent}">${x.sent?"Enviado ✓":"Convite enviado"}</button>
-        <button class="toggle conf" data-gconf="${x.id}" aria-pressed="${!!x.confirmed}">${x.confirmed?"Confirmado ✓":"Confirmado"}</button>
-      </div>
-    </div>
-  </article>`;
+  </li>`;
 }
 
 $("#guest-form").onsubmit = async e=>{
@@ -765,22 +778,18 @@ $("#go-add-gift").onclick = () => {
 };
 $("#gift-add-back").onclick = () => showGiftsScreen("list");
 
-function giftCard(g){
+function giftRow(g){
   const c = giftCat(g.category);
-  return `<article class="item ${g.settled?"settled":""}" style="--tone:${c.tone}">
+  const sub = [g.recipient&&`Para ${g.recipient}`, g.buyer&&`Compra: ${g.buyer}`, g.giver&&`Dá: ${g.giver}`].filter(Boolean).join(" · ");
+  return `<li class="task gift ${g.settled?"done":""}">
+    <button class="check" data-settle="${g.id}" aria-pressed="${!!g.settled}" aria-label="Marcar ${esc(g.item)} como saldada">${g.settled?"✓":""}</button>
+    <span class="txt">${esc(g.item)}${sub?`<span class="qty">${esc(sub)}</span>`:""}</span>
+    <span class="ctrls">
+      <span class="who" style="--tint:color-mix(in srgb, ${c.tone} 28%, white)">${c.label}</span>
+      <span class="value">${formatEuro(g.value)}</span>
+    </span>
     <button class="del" data-gfdel="${g.id}" aria-label="Apagar ${esc(g.item)}">×</button>
-    <div class="body">
-      <h3>${esc(g.item)}</h3>
-      ${g.recipient?`<p class="gift-for">Para: ${esc(g.recipient)}</p>`:""}
-      <div class="meta">
-        <span class="pill" style="--tint:color-mix(in srgb, ${c.tone} 28%, white)">${c.label}</span>
-        ${g.buyer?`<span class="pill plain">Compra: ${esc(g.buyer)}</span>`:""}
-        ${g.giver?`<span class="pill plain">Dá: ${esc(g.giver)}</span>`:""}
-        <span class="pill plain">${formatEuro(g.value)}</span>
-      </div>
-      <button class="settle-btn" data-settle="${g.id}">${g.settled?"Dívida saldada ✓":"Marcar como saldada"}</button>
-    </div>
-  </article>`;
+  </li>`;
 }
 
 function totalsByKey(list, keyFn){
@@ -798,9 +807,13 @@ function totalRowsHtml(rows){
 }
 
 function renderGifts(){
-  const gifts = [...data.gifts].reverse();  // mais recentes primeiro
+  const recent = [...data.gifts].reverse();  // mais recentes primeiro, saldadas no fim
+  const gifts = [...recent.filter(g=>!g.settled), ...recent.filter(g=>g.settled)];
+  const settledCount = data.gifts.length - recent.filter(g=>!g.settled).length;
+  $("#gift-count").textContent = `${settledCount} de ${data.gifts.length} saldadas`;
+  $("#gift-bar").style.width = data.gifts.length ? (settledCount/data.gifts.length*100)+"%" : "0";
   $("#gifts-items").innerHTML = gifts.length
-    ? `<div class="items">${gifts.map(giftCard).join("")}</div>`
+    ? `<ul class="task-list">${gifts.map(giftRow).join("")}</ul>`
     : `<div class="empty-note"><strong>Ainda não há prendas</strong>Usa o botão "Nova prenda" para começar.</div>`;
 
   const unsettled = data.gifts.filter(g=>!g.settled);
