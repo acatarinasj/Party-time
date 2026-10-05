@@ -156,10 +156,20 @@
   .toggle.sent[aria-pressed="true"]{background:#DDF3EE;color:#2F7A6A}
   .toggle.conf[aria-pressed="true"]{background:#FFE4CC;color:#A55E10}
   .task .ctrls{display:flex;align-items:center;gap:8px;flex:none}
+  .task.guest .txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toggle .sm{display:none}
+  /* telemóvel: tudo numa linha, botões passam a ícones */
   @media (max-width:600px){
-    .task.guest{flex-wrap:wrap;row-gap:8px}
-    .task.guest .txt{flex:1 1 0;min-width:0}
-    .task.guest .ctrls{order:3;flex-basis:100%;padding-left:2px;justify-content:space-between}
+    .task.guest{gap:6px;padding-left:12px;padding-right:6px}
+    .task.guest .ctrls{gap:6px}
+    .task.guest .toggles-row{gap:4px !important}
+    .toggle{width:30px;height:30px;padding:0;display:grid;place-items:center;font-size:14px}
+    .toggle .lg{display:none}
+    .toggle .sm{display:inline}
+    .stepper .count{min-width:24px}
+    .step{width:24px;height:24px}
+    .task.guest .edit,.task.guest .del{width:24px}
+    .task.guest .edit + .del{margin-left:-4px}
   }
 
   /* ---------- to do ---------- */
@@ -528,9 +538,9 @@ function guestRow(x){
         <span class="count" aria-label="${plus} acompanhantes">+${plus}</span>
         <button class="step" data-gplus="${x.id}" data-d="1" aria-label="Mais um acompanhante">+</button>
       </span>
-      <span style="display:flex;gap:6px">
-        <button class="toggle sent" data-gsent="${x.id}" aria-pressed="${!!x.sent}">${x.sent?"Enviado ✓":"Enviado"}</button>
-        <button class="toggle conf" data-gconf="${x.id}" aria-pressed="${!!x.confirmed}">${x.confirmed?"Confirmado ✓":"Confirmado"}</button>
+      <span class="toggles-row" style="display:flex;gap:6px">
+        <button class="toggle sent" data-gsent="${x.id}" aria-pressed="${!!x.sent}" aria-label="Convite enviado" title="Convite enviado"><span class="lg">${x.sent?"Enviado ✓":"Enviado"}</span><span class="sm" aria-hidden="true">✉</span></button>
+        <button class="toggle conf" data-gconf="${x.id}" aria-pressed="${!!x.confirmed}" aria-label="Confirmado" title="Confirmado"><span class="lg">${x.confirmed?"Confirmado ✓":"Confirmado"}</span><span class="sm" aria-hidden="true">✓</span></button>
       </span>
     </div>
     <button class="edit" data-gedit="${x.id}" aria-label="Editar nome de ${esc(x.name)}">✎</button>
