@@ -128,10 +128,6 @@
   .item{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);position:relative}
   .item h3{font-size:17px;margin:0 0 8px;line-height:1.2;padding-right:56px;overflow-wrap:anywhere;display:flex;align-items:center;gap:8px}
   .item h3::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;background:var(--tone,var(--mint))}
-  .item.food h3::before{display:none}
-  .item.food h3 .check{width:22px;height:22px;font-size:12px}
-  .item.food.done h3 span{text-decoration:line-through;color:#B5BCC7}
-  .item.food.done .meta{opacity:.5}
   .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   .pill{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--tint,var(--soft));color:var(--ink)}
   .pill.plain{background:var(--soft);color:var(--muted)}
@@ -172,7 +168,10 @@
   .check[aria-pressed="true"]{background:var(--green);border-color:var(--green)}
   .task .txt{flex:1;font-size:15px;font-weight:600;overflow-wrap:anywhere}
   .task.done .txt{text-decoration:line-through;color:#B5BCC7}
-  .task .del{position:static;flex:none}
+  .task .del,.task .edit{position:static;flex:none}
+  .task .edit + .del{margin-left:-8px}
+  .task .txt .qty{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-top:1px}
+  .task.done .txt .qty{color:#C9CED6}
   .task .who{
     flex:none;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;border:0;border-radius:999px;padding:4px 10px;
     background:var(--tint,var(--soft));color:var(--ink);max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
@@ -606,22 +605,20 @@ function renderFood(){
   // por tratar primeiro, prontos no fim
   const sorted = [...list.filter(f=>!f.done), ...list.filter(f=>f.done)];
   $("#food-items").innerHTML = sorted.length
-    ? `<div class="items">${sorted.map(foodCard).join("")}</div>`
+    ? `<ul class="task-list">${sorted.map(foodRow).join("")}</ul>`
     : `<div class="empty-note"><strong>Ainda não há itens</strong>Adiciona o que é preciso, quanto e quem trata disso.</div>`;
 }
 
-function foodCard(f){
-  return `<article class="item food ${f.done?"done":""}">
+function foodRow(f){
+  return `<li class="task ${f.done?"done":""}">
+    <button class="check" data-fdone="${f.id}" aria-pressed="${!!f.done}" aria-label="Marcar ${esc(f.name)} como pronto">${f.done?"✓":""}</button>
+    <span class="txt">${esc(f.name)}${f.qty?`<span class="qty">${esc(f.qty)}</span>`:""}</span>
+    ${f.who
+      ? `<button class="who" data-fwho="${f.id}" style="--tint:${tint(f.who)}" aria-label="Responsável: ${esc(f.who)} (alterar)">${esc(f.who)}</button>`
+      : `<button class="who none" data-fwho="${f.id}" aria-label="Atribuir responsável">+ Responsável</button>`}
     <button class="edit" data-fedit="${f.id}" aria-label="Editar ${esc(f.name)}">✎</button>
     <button class="del" data-fdel="${f.id}" aria-label="Apagar ${esc(f.name)}">×</button>
-    <div class="body">
-      <h3><button class="check" data-fdone="${f.id}" aria-pressed="${!!f.done}" aria-label="Marcar ${esc(f.name)} como pronto">${f.done?"✓":""}</button><span>${esc(f.name)}</span></h3>
-      <div class="meta">
-        ${f.qty?`<span class="pill plain">${esc(f.qty)}</span>`:""}
-        ${f.who?`<span class="pill" style="--tint:${tint(f.who)}">${esc(f.who)}</span>`:`<span class="pill plain">Sem responsável</span>`}
-      </div>
-    </div>
-  </article>`;
+  </li>`;
 }
 
 function resetFoodForm(){
@@ -660,6 +657,13 @@ $("#food-items").onclick = e=>{
     const f = data.food.find(x=>x.id===b.dataset.fdone);
     f.done = !f.done;
     renderFood(); updateRow("food", f.id, {done:f.done});
+  } else if(b.dataset.fwho){
+    const f = data.food.find(x=>x.id===b.dataset.fwho);
+    const who = prompt(`Responsável por "${f.name}" (deixa vazio para nenhum)`, f.who||"");
+    if(who===null) return;
+    f.who = who.trim() || null;
+    if(editingFoodId===f.id) $("#f-who").value = f.who||"";
+    renderFood(); updateRow("food", f.id, {who:f.who});
   } else if(b.dataset.fedit){
     const f = data.food.find(x=>x.id===b.dataset.fedit);
     editingFoodId = f.id;
