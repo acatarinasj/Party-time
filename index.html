@@ -108,18 +108,13 @@
   .login-error{display:none;background:#FFE9EC;color:#B4485A;border-radius:12px;padding:9px 12px;font-size:14px;text-align:center}
 
   /* ---------- resumo ---------- */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--paper);border:1px solid var(--line);
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);
     border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
-  .stat{padding:14px 14px 12px;border-left:1px solid var(--line)}
-  .stat:first-child{border-left:0}
+  .stat{padding:14px 14px 12px;background:var(--paper)}
   .stat .num{display:flex;align-items:center;gap:7px;font-size:24px;line-height:1}
   .stat .num::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--tone,var(--mint))}
   .stat .lbl{display:block;font-size:12px;color:var(--muted);margin-top:5px;font-weight:700}
-  @media (max-width:560px){
-    .stats{grid-template-columns:repeat(2,1fr)}
-    .stat:nth-child(3){border-left:0}
-    .stat:nth-child(n+3){border-top:1px solid var(--line)}
-  }
+  @media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
 
   /* ---------- filtros ---------- */
   .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
@@ -155,6 +150,9 @@
   }
   .toggle.sent[aria-pressed="true"]{background:#DDF3EE;color:#2F7A6A}
   .toggle.conf[aria-pressed="true"]{background:#FFE4CC;color:#A55E10}
+  .toggle.decl[aria-pressed="true"]{background:#FFE9EC;color:#B4485A}
+  .task.guest.declined .txt{color:#B5BCC7;text-decoration:line-through}
+  .task.guest .txt[data-gedit]{cursor:pointer}
   .task .ctrls{display:flex;align-items:center;gap:8px;flex:none}
   .task.guest .txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .toggle .sm{display:none}
@@ -168,8 +166,8 @@
     .toggle .sm{display:inline}
     .stepper .count{min-width:24px}
     .step{width:24px;height:24px}
-    .task.guest .edit,.task.guest .del{width:24px}
-    .task.guest .edit + .del{margin-left:-4px}
+    .task.guest .edit{display:none}
+    .task.guest .del{width:24px}
   }
 
   /* ---------- to do ---------- */
@@ -296,6 +294,7 @@
       <button class="chip" data-f="unsent" aria-pressed="false">Por enviar</button>
       <button class="chip" data-f="sent" aria-pressed="false">Enviados</button>
       <button class="chip" data-f="conf" aria-pressed="false">Confirmados</button>
+      <button class="chip" data-f="decl" aria-pressed="false">Recusados</button>
     </div>
     <div id="guest-items"></div>
   </section>
@@ -504,13 +503,17 @@ function renderGuests(){
   const g = data.guests;
   const people = g.reduce((n,x)=>n+1+(x.plus||0), 0);
   const sent = g.filter(x=>x.sent).length;
+  const heads = list => list.reduce((n,x)=>n+1+(x.plus||0), 0);  // conta o convidado e os acompanhantes
   const confGuests = g.filter(x=>x.confirmed);
-  const confPeople = confGuests.reduce((n,x)=>n+1+(x.plus||0), 0);
+  const confPeople = heads(confGuests);
+  const declPeople = heads(g.filter(x=>x.declined));
   $("#guest-stats").innerHTML = [
     {n:g.length,   l:"Convidados",          t:"var(--pink)"},
     {n:people,     l:"Pessoas (com +1)",    t:"var(--yellow)"},
     {n:sent,       l:"Convites enviados",   t:"var(--mint)"},
-    {n:confPeople, l:"Pessoas confirmadas", t:"var(--orange)"}
+    {n:confPeople, l:"Pessoas confirmadas", t:"var(--orange)"},
+    {n:declPeople, l:"Pessoas recusaram",   t:"var(--purple)"},
+    {n:people-confPeople-declPeople, l:"Pessoas por responder", t:"#D6DBE2"}
   ].map(s=>`<div class="stat" style="--tone:${s.t}"><span class="num">${s.n}</span><span class="lbl">${s.l}</span></div>`).join("");
 
   $("#guest-count").textContent = `${confGuests.length} de ${g.length} confirmados`;
@@ -519,7 +522,8 @@ function renderGuests(){
   const list = g.filter(x=>
     guestFilter==="all" ? true :
     guestFilter==="unsent" ? !x.sent :
-    guestFilter==="sent" ? x.sent : x.confirmed);
+    guestFilter==="sent" ? x.sent :
+    guestFilter==="decl" ? x.declined : x.confirmed);
 
   $("#guest-items").innerHTML = list.length
     ? `<ul class="task-list">${list.map(guestRow).join("")}</ul>`
@@ -530,8 +534,8 @@ function renderGuests(){
 
 function guestRow(x){
   const plus = x.plus||0;
-  return `<li class="task guest">
-    <span class="txt">${esc(x.name)}</span>
+  return `<li class="task guest ${x.declined?"declined":""}">
+    <span class="txt" data-gedit="${x.id}" title="Editar nome">${esc(x.name)}</span>
     <div class="ctrls">
       <span class="stepper" title="Acompanhantes">
         <button class="step" data-gplus="${x.id}" data-d="-1" ${plus<=0?"disabled":""} aria-label="Menos um acompanhante">−</button>
@@ -541,6 +545,7 @@ function guestRow(x){
       <span class="toggles-row" style="display:flex;gap:6px">
         <button class="toggle sent" data-gsent="${x.id}" aria-pressed="${!!x.sent}" aria-label="Convite enviado" title="Convite enviado"><span class="lg">${x.sent?"Enviado ✓":"Enviado"}</span><span class="sm" aria-hidden="true">✉</span></button>
         <button class="toggle conf" data-gconf="${x.id}" aria-pressed="${!!x.confirmed}" aria-label="Confirmado" title="Confirmado"><span class="lg">${x.confirmed?"Confirmado ✓":"Confirmado"}</span><span class="sm" aria-hidden="true">✓</span></button>
+        <button class="toggle decl" data-gdecl="${x.id}" aria-pressed="${!!x.declined}" aria-label="Recusado" title="Recusado"><span class="lg">${x.declined?"Recusado ✓":"Recusado"}</span><span class="sm" aria-hidden="true">⊘</span></button>
       </span>
     </div>
     <button class="edit" data-gedit="${x.id}" aria-label="Editar nome de ${esc(x.name)}">✎</button>
@@ -569,7 +574,7 @@ $("#guest-filter").onclick = e=>{
 };
 
 $("#guest-items").onclick = e=>{
-  const b = e.target.closest("button"); if(!b) return;
+  const b = e.target.closest("button, [data-gedit]"); if(!b) return;
   const find = id => data.guests.find(x=>x.id===id);
   // atualiza já no ecrã e grava em segundo plano
   const patch = (x, p) => { Object.assign(x, p); renderGuests(); updateRow("guests", x.id, p); };
@@ -582,7 +587,11 @@ $("#guest-items").onclick = e=>{
   } else if(b.dataset.gconf){
     const x = find(b.dataset.gconf);
     // quem confirmou recebeu o convite
-    patch(x, x.confirmed ? {confirmed:false} : {confirmed:true, sent:true});
+    patch(x, x.confirmed ? {confirmed:false} : {confirmed:true, declined:false, sent:true});
+  } else if(b.dataset.gdecl){
+    const x = find(b.dataset.gdecl);
+    // confirmado e recusado excluem-se; quem recusou também recebeu o convite
+    patch(x, x.declined ? {declined:false} : {declined:true, confirmed:false, sent:true});
   } else if(b.dataset.gedit){
     const x = find(b.dataset.gedit);
     const name = prompt("Nome do convidado", x.name);
