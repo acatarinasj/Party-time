@@ -216,6 +216,12 @@
   .cat-name{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#B5BCC7;margin:6px 0 1px}
   .cat-group:first-child .cat-name{margin-top:0}
   .totals-empty{margin:0;font-size:13px;color:#B5BCC7}
+  .gift-group + .gift-group{margin-top:18px}
+  .group-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 4px 8px}
+  .group-head .name{display:flex;align-items:center;gap:8px;font-family:"Fredoka",sans-serif;font-weight:600;font-size:16px}
+  .group-head .name::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--tone,#D6DBE2)}
+  .group-head .sum{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+
   .empty-note{border:1.5px dashed var(--line);border-radius:var(--radius);padding:26px 18px;text-align:center;color:var(--muted);font-size:14px}
   .empty-note strong{display:block;font-family:"Fredoka",sans-serif;font-weight:600;font-size:17px;color:var(--ink);margin-bottom:4px}
   .hidden{display:none !important}
@@ -810,7 +816,8 @@ $("#gift-add-back").onclick = () => showGiftsScreen("list");
 
 function giftRow(g){
   const c = giftCat(g.category);
-  const sub = [g.recipient&&`Para ${g.recipient}`, g.buyer&&`Compra: ${g.buyer}`, g.giver&&`Dá: ${g.giver}`].filter(Boolean).join(" · ");
+  // "quem dá" já aparece no cabeçalho do grupo
+  const sub = [g.recipient&&`Para ${g.recipient}`, g.buyer&&`Compra: ${g.buyer}`].filter(Boolean).join(" · ");
   return `<li class="task gift ${g.settled?"done":""}">
     <button class="check" data-settle="${g.id}" aria-pressed="${!!g.settled}" aria-label="Marcar ${esc(g.item)} como saldada">${g.settled?"✓":""}</button>
     <span class="txt" data-gfedit="${g.id}" title="Editar prenda" style="cursor:pointer">${esc(g.item)}${sub?`<span class="qty">${esc(sub)}</span>`:""}</span>
@@ -843,8 +850,25 @@ function renderGifts(){
   const settledCount = data.gifts.length - recent.filter(g=>!g.settled).length;
   $("#gift-count").textContent = `${settledCount} de ${data.gifts.length} saldadas`;
   $("#gift-bar").style.width = data.gifts.length ? (settledCount/data.gifts.length*100)+"%" : "0";
+  // agrupar por quem dá (por ordem alfabética, "Sem indicação" no fim)
+  const NO_GIVER = "Sem indicação";
+  const groups = {};
+  gifts.forEach(g=>{ (groups[g.giver || NO_GIVER] ||= []).push(g); });
+  const names = Object.keys(groups).sort((a,b)=> a===NO_GIVER ? 1 : b===NO_GIVER ? -1 : a.localeCompare(b,"pt"));
+  const sumOf = list => list.reduce((n,g)=>n+(Number(g.value)||0), 0);
   $("#gifts-items").innerHTML = gifts.length
-    ? `<ul class="task-list">${gifts.map(giftRow).join("")}</ul>`
+    ? names.map(name=>{
+        const list = groups[name];
+        const open = list.filter(g=>!g.settled);
+        const sum = open.length ? `${formatEuro(sumOf(open))} por saldar` : "tudo saldado ✓";
+        return `<div class="gift-group">
+          <div class="group-head" style="--tone:${name===NO_GIVER?"#D6DBE2":toneFor(name)}">
+            <span class="name">${name===NO_GIVER?"Sem quem dá":"Dá: "+esc(name)}</span>
+            <span class="sum">${list.length} ${list.length===1?"prenda":"prendas"} · ${sum}</span>
+          </div>
+          <ul class="task-list">${list.map(giftRow).join("")}</ul>
+        </div>`;
+      }).join("")
     : `<div class="empty-note"><strong>Ainda não há prendas</strong>Usa o botão "Nova prenda" para começar.</div>`;
 
   const unsettled = data.gifts.filter(g=>!g.settled);
