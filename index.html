@@ -371,6 +371,7 @@
         <h2>Prendas</h2>
         <button class="btn-cta" id="go-add-gift">Nova prenda</button>
       </div>
+      <div class="filters" id="gift-filter"></div>
       <div class="card totals">
         <div class="totals-head">
           <span class="lbl" style="margin:0">Total por saldar</span>
@@ -844,12 +845,23 @@ function totalRowsHtml(rows){
     : `<p class="totals-empty">Sem valores.</p>`;
 }
 
+let giftFilter = "all";
+$("#gift-filter").onclick = e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  giftFilter = b.dataset.f; renderGifts();
+};
+
 function renderGifts(){
-  const recent = [...data.gifts].reverse();  // mais recentes primeiro, saldadas no fim
+  // filtro por categoria: aplica-se aos totais, ao contador e à lista
+  $("#gift-filter").innerHTML = [{id:"all",label:"Todas"}, ...GIFT_CATS].map(c=>
+    `<button class="chip" data-f="${c.id}" aria-pressed="${giftFilter===c.id}">${c.label}</button>`).join("");
+  const shown = data.gifts.filter(g=> giftFilter==="all" || giftCat(g.category).id===giftFilter);
+
+  const recent = [...shown].reverse();  // mais recentes primeiro, saldadas no fim
   const gifts = [...recent.filter(g=>!g.settled), ...recent.filter(g=>g.settled)];
-  const settledCount = data.gifts.length - recent.filter(g=>!g.settled).length;
-  $("#gift-count").textContent = `${settledCount} de ${data.gifts.length} saldadas`;
-  $("#gift-bar").style.width = data.gifts.length ? (settledCount/data.gifts.length*100)+"%" : "0";
+  const settledCount = shown.length - recent.filter(g=>!g.settled).length;
+  $("#gift-count").textContent = `${settledCount} de ${shown.length} saldadas`;
+  $("#gift-bar").style.width = shown.length ? (settledCount/shown.length*100)+"%" : "0";
   // agrupar por quem dá (por ordem alfabética, "Sem indicação" no fim)
   const NO_GIVER = "Sem indicação";
   const groups = {};
@@ -869,9 +881,11 @@ function renderGifts(){
           <ul class="task-list">${list.map(giftRow).join("")}</ul>
         </div>`;
       }).join("")
-    : `<div class="empty-note"><strong>Ainda não há prendas</strong>Usa o botão "Nova prenda" para começar.</div>`;
+    : data.gifts.length
+      ? `<div class="empty-note"><strong>Nada aqui</strong>Não há prendas nesta categoria.</div>`
+      : `<div class="empty-note"><strong>Ainda não há prendas</strong>Usa o botão "Nova prenda" para começar.</div>`;
 
-  const unsettled = data.gifts.filter(g=>!g.settled);
+  const unsettled = shown.filter(g=>!g.settled);
   $("#gifts-total").textContent = formatEuro(unsettled.reduce((sum,g)=>sum+(Number(g.value)||0), 0));
   $("#gifts-by-buyer").innerHTML = totalRowsHtml(totalsByKey(unsettled, g=>g.buyer));
   $("#gifts-by-giver").innerHTML = totalRowsHtml(totalsByKey(unsettled, g=>g.giver));
